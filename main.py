@@ -1,18 +1,14 @@
 from Modules import *
 from PySerial_RX import *
+from User_Interface import *
+from Data_Manager import *
 
 
-class Config:
-
-    # Serial port config settings
-    port = 'COM9'
-    baud_rate = 115200
-    buffer_size = 10000
-
-
-class Application:
+class Application(QThread):
 
     def __init__(self):
+
+        super(Application, self).__init__()
 
         # Setup QT base functions
         os.environ["QT_DEBUG_PLUGINS"] = "0"
@@ -26,6 +22,8 @@ class Application:
 
         # Initialize PySerial connection
         self.UART_Connection = UART_RX(port=Config.port, baud_rate=Config.baud_rate, buffer_size=Config.buffer_size)
+        self.UserInputThread = UserInput()
+        self.Data_Manager = Data_Manager(serial_connection=self.UART_Connection,user_connection=self.UserInputThread)
 
         # Define the plot
         print('finished init')

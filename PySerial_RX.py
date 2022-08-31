@@ -46,6 +46,9 @@ class UART_RX(QThread):
                 pass
         return result
 
+    def change_port(self, port):
+        self.port = port
+
     # Connect port - used in initialization
     def connect_port(self):
         try:
@@ -58,6 +61,7 @@ class UART_RX(QThread):
             self.serial_connection.__del__()
             self.serial_connection.open()
 
+            print('Successfully connected to %s'%self.serial_connection.port)
             # Start the QT thread
             self.start()
 
@@ -66,9 +70,10 @@ class UART_RX(QThread):
             print('Error in connecting to port : %s' % error)
             print('If your error was the wrong port, try these ports:')
             print(available_ports)
-            quit()
+            print('The program is still running but will do nothing until you change the port')
 
     # To emergency close the port (used for debug)
+
     def close_port(self):
         self.serial_connection.close()
         self.terminate()
