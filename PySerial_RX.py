@@ -3,6 +3,8 @@ from Modules import *
 
 class UART_RX(QThread):
 
+    serial_to_manager_carrier = Signal(str)
+
     def __init__(self, port='COM9', baud_rate=115200, buffer_size=10000):
         super(UART_RX, self).__init__()
 
@@ -10,6 +12,7 @@ class UART_RX(QThread):
         self.port = port
         self.baud_rate = baud_rate
         self.buffer_size = buffer_size
+        self.UART_buffer = bytearray()
 
         # Initialize PySerial - specify baud rate
         self.serial_connection = serial.Serial()
@@ -64,3 +67,33 @@ class UART_RX(QThread):
             print('If your error was the wrong port, try these ports:')
             print(available_ports)
             quit()
+
+    # To emergency close the port (used for debug)
+    def close_port(self):
+        self.serial_connection.close()
+        self.terminate()
+        print("Close port and terminate itself")
+
+    def readline(self):
+        # Copy paste from stack overflow
+        i = self.UART_buffer.find(b"\n")
+
+        if i >= 0:
+            r = self.UART_buffer[:i + 1]
+            self.UART_buffer = self.UART_buffer[i + 1:]
+            return r
+
+        while True:
+            data = self.serial_connection.read_all()
+            i = data.find(b"\n")
+            if i >= 0:
+                r = self.UART_buffer + data[:i + 1]
+                self.UART_buffer[0:] = data[i + 1:]
+                return r
+            else:
+                self.UART_buffer.extend(data)
+
+    def run(self):
+        while self.serial_connection.is_open:
+            lineprint = self.readline().decode('utf-8').rstrip()
+            self.serial_to_manager_carrier.emit(lineprint)
