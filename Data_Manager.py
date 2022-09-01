@@ -215,6 +215,6 @@ class Data_Manager(QThread):
                             # If now ready to transmit:
                             if self.transmitting == 1:
                                 self.manager_to_plotter_carrier.emit(self.line)
-                            
+
                     except Exception as e:
                         print('Incomplete line.')

@@ -2,7 +2,7 @@ from Modules import *
 from PySerial_RX import *
 from User_Interface import *
 from Data_Manager import *
-
+from Raw_Processor import *
 
 class Application(QThread):
 
@@ -23,7 +23,11 @@ class Application(QThread):
         # Initialize PySerial connection
         self.UART_Connection = UART_RX(port=Config.port, baud_rate=Config.baud_rate, buffer_size=Config.buffer_size)
         self.UserInputThread = UserInput()
-        self.Data_Manager = Data_Manager(serial_connection=self.UART_Connection,user_connection=self.UserInputThread)
+
+        self.Data_Manager = Data_Manager()
+
+        self.Raw_Processor = Raw_Processor()
+
 
         # Define the plot
 
