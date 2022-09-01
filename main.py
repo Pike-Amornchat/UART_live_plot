@@ -26,7 +26,6 @@ class Application(QThread):
         self.Data_Manager = Data_Manager(serial_connection=self.UART_Connection,user_connection=self.UserInputThread)
 
         # Define the plot
-        print('finished init')
 
         # We have created objects, but we haven't started running so this tells it to start
         self.app.processEvents()

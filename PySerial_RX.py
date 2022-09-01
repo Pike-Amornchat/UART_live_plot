@@ -51,6 +51,7 @@ class UART_RX(QThread):
 
     # Connect port - used in initialization
     def connect_port(self):
+
         try:
             # Setup up baud rate and port
             self.serial_connection.port = self.port
@@ -77,7 +78,6 @@ class UART_RX(QThread):
     def close_port(self):
         self.serial_connection.close()
         self.terminate()
-        print("Close port and terminate itself")
 
     def readline(self):
         # Copy paste from stack overflow
@@ -99,6 +99,9 @@ class UART_RX(QThread):
                 self.UART_buffer.extend(data)
 
     def run(self):
-        while self.serial_connection.is_open:
-            lineprint = self.readline().decode('utf-8').rstrip()
-            self.serial_to_manager_carrier.emit(lineprint)
+        try:
+            while self.serial_connection.is_open:
+                lineprint = self.readline().decode('utf-8').rstrip()
+                self.serial_to_manager_carrier.emit(lineprint)
+        except Exception as e:
+            print('There was a temporary error connecting to port - please wait a second.')

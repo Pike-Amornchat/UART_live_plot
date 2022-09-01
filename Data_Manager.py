@@ -47,8 +47,8 @@ class Data_Manager(QThread):
         ''
 
     def run(self):
-        while True:
 
+        while True:
             # Optimize the CPU - if nothing in then don't kill the CPU
 
             if len(self.raw_UART_input) == 0:
@@ -56,10 +56,10 @@ class Data_Manager(QThread):
             if len(self.user_input) == 0:
                 time.sleep(0.0001)
 
-            command = ''
-            option = ''
-            choice = ''
             while len(self.raw_UART_input) > 0 or len(self.user_input) > 0:
+                command = ''
+                option = ''
+                choice = ''
 
                 if len(self.user_input) > 0:
                     try:
@@ -67,6 +67,7 @@ class Data_Manager(QThread):
                         option = self.user_input[0][1]
                         if command == 'connection' and option == 'setport':
                             choice = self.user_input[0][2]
+
                     except Exception:
                         print('Sorry, incorrect syntax. Please try again.')
 
@@ -83,56 +84,81 @@ class Data_Manager(QThread):
                             self.serial_connection.connect_port()
                         elif option == 'closeport':
                             self.serial_connection.close_port()
+                            print('Port %s closed'%self.serial_connection.port)
 
                     elif command == 'plot':
                         options = self.user_input[0][1:]
-
-                        for i in range(len(options)):
-                            options[i] = Config.categories[options[i]]
-
-                        decoded_options = self.list_and(options)
-                        self.plot_index_list = self.combine_list(self.plot_index_list,decoded_options)
+                        try:
+                            for i in range(len(options)):
+                                options[i] = Config.categories[options[i]]
+                            decoded_options = self.list_and(options)
+                            self.plot_index_list = self.combine_list(self.plot_index_list,decoded_options)
+                        except Exception:
+                            self.plot_index_list = []
+                        self.plot_index_list.sort()
                         print(self.plot_index_list)
                         self.manager_to_plotter_carrier.emit(self.plot_index_list)
+
+                    elif command == 'remove':
+                        options = self.user_input[0][1:]
+                        try:
+                            for i in range(len(options)):
+                                options[i] = Config.categories[options[i]]
+                            decoded_options = self.list_and(options)
+                            self.plot_index_list = self.delete_from(self.plot_index_list,decoded_options)
+                        except Exception:
+                            self.plot_index_list = []
+                        self.plot_index_list.sort()
+                        print(self.plot_index_list)
+                        self.manager_to_plotter_carrier.emit(self.plot_index_list)
+
+                    # Reset the user input
+
                     self.user_input = []
 
                 elif len(self.raw_UART_input) > 0:
+                    
+                    try:
 
-                    # The raw input coming in will be the first one in our stack
-                    self.raw = self.raw_UART_input[0]
+                        # The raw input coming in will be the first one in our stack
+                        self.raw = self.raw_UART_input[0]
 
-                    # We can then delete the first element, because we are done with it
-                    del self.raw_UART_input[0]
-
-                    self.line = np.copy(np.asarray(self.raw.split(',')))
-                    self.identifier = self.line[0][0]
-                    self.line[0] = self.line[0][2:]
-
-                    # If incoming line is just text then print it
-                    if self.identifier == 'T':
                         print(self.raw)
 
-                    # If the system detects an S for start, will reinitialize everything again.
-                    elif self.identifier == 'S':
-                        print(self.raw)
+                        # We can then delete the first element, because we are done with it
+                        del self.raw_UART_input[0]
 
-                    # If the identifier is a R - for R - sensor noise covariance matrix
-                    elif self.identifier == 'R':
-                        print(self.raw)
+                        self.line = np.copy(np.asarray(self.raw.split(',')))
+                        self.identifier = self.line[0][0]
+                        self.line[0] = self.line[0][2:]
 
-                    # We also have a physical noise estimator for the acceleration,
-                    # where the user holds in rest position, to find Ak
-                    elif self.identifier == 'A':
-                        print(self.raw)
+                        # If incoming line is just text then print it
+                        if self.identifier == 'T':
+                            print(self.raw)
 
-                    # Lastly, for angular velocity:
-                    elif self.identifier == 'w':
-                        print(self.raw)
+                        # If the system detects an S for start, will reinitialize everything again.
+                        elif self.identifier == 'S':
+                            print(self.raw)
 
-                    # If the system detects a C for complete, the calibration is done.
-                    elif self.identifier == 'C':
-                        print(self.raw)
+                        # If the identifier is a R - for R - sensor noise covariance matrix
+                        elif self.identifier == 'R':
+                            print(self.raw)
 
-                    # Gyro data (G)
-                    elif self.identifier == 'G':
-                        ''
+                        # We also have a physical noise estimator for the acceleration,
+                        # where the user holds in rest position, to find Ak
+                        elif self.identifier == 'A':
+                            print(self.raw)
+
+                        # Lastly, for angular velocity:
+                        elif self.identifier == 'w':
+                            print(self.raw)
+
+                        # If the system detects a C for complete, the calibration is done.
+                        elif self.identifier == 'C':
+                            print(self.raw)
+
+                        # Gyro data (G)
+                        elif self.identifier == 'G':
+                            ''
+                    except Exception as e:
+                        print('Incomplete line.')

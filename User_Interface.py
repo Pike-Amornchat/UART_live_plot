@@ -11,5 +11,7 @@ class UserInput(QThread):
         self.start()
 
     def run(self):
-        self.command = str(input('Enter your command here'))
-        self.user_to_manager_carrier.emit(self.command)
+        while True:
+            time.sleep(0.0001)
+            self.command = str(input(''))
+            self.user_to_manager_carrier.emit(self.command)
