@@ -10,6 +10,11 @@ class UserInput(QThread):
         self.command = ''
         self.start()
 
+    def reset(self):
+        self.terminate()
+        self.command = ''
+        self.start()
+
     def run(self):
         while True:
             time.sleep(0.0001)

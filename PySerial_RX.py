@@ -49,6 +49,13 @@ class UART_RX(QThread):
     def change_port(self, port):
         self.port = port
 
+    def reset(self):
+        self.UART_buffer = bytearray()
+
+        self.close_port()
+
+        self.connect_port()
+
     # Connect port - used in initialization
     def connect_port(self):
 
