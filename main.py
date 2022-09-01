@@ -24,9 +24,11 @@ class Application(QThread):
         self.UART_Connection = UART_RX(port=Config.port, baud_rate=Config.baud_rate, buffer_size=Config.buffer_size)
         self.UserInputThread = UserInput()
 
-        self.Data_Manager = Data_Manager()
+        self.Data_Manager = Data_Manager(serial_connection=self.UART_Connection,user_connection=self.UserInputThread)
 
-        self.Raw_Processor = Raw_Processor()
+        self.Raw_Processor = Raw_Processor(self.Data_Manager)
+
+
 
 
         # Define the plot
