@@ -2,7 +2,7 @@ class Config:
         # Serial port config settings
         port = 'COM9'
         baud_rate = 115200
-        buffer_size = 10000
+        buffer_size = 100000
 
         # Plotting settings
         plot_size = 10

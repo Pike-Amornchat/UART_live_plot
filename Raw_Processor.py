@@ -1,6 +1,11 @@
 from Modules import *
 
+
 class Raw_Processor(QThread):
+
+    raw_processor_to_application_carrier = Signal(list)
+    raw_processor_to_storage_carrier = Signal(list)
+    raw_processor_to_plotter_carrier = Signal(list)
 
     def __init__(self,data_manager=None):
         super(Raw_Processor, self).__init__()
@@ -56,14 +61,6 @@ class Raw_Processor(QThread):
 
     def reset(self):
         self.init_raw_processor()
-
-    # def convert_to_plottable(self):
-    #     final = np.zeros((len(arr), N))
-    #     for i in range(N):
-    #         for j in range(len(final)):
-    #             final[j][i] = x_smooth[i][j][0]
-    #
-    #     return final
 
     def init_kalman(self, dt, cov_acc, cov_ang, Rk_estimate):
 
@@ -204,9 +201,9 @@ class Raw_Processor(QThread):
         self.Hk, self.Qk, self.Rk = self.init_kalman(Config.dt, self.cov_acc, self.cov_ang, self.R)
 
     def run(self):
+        # return
         while True:
             if len(self.data_buffer) != 0:
-
                 # 0 - 7 updated (time, temp, raw acc, raw ang)
 
                 # Append time
@@ -223,7 +220,8 @@ class Raw_Processor(QThread):
                 # Calculate jerk and update 8 - 10:
                 if len(self.data[2].buffer) >= 3:
                     for i in range(2, 4 + 1):
-                        self.data[6+i].add((3 * self.data[i].buffer[-1] - 4 * self.data[i].buffer[-2] + self.data[i].buffer[-3])
+                        self.data[6+i].add((3 * self.data[i].buffer[-1] - 4 * self.data[i].
+                                            buffer[-2] + self.data[i].buffer[-3])
                                               / (2 * Config.dt))
 
                 # Update 11 - 12, the norms of angular and acceleration raw
@@ -231,15 +229,20 @@ class Raw_Processor(QThread):
                 self.data[12].add(self.data_buffer[0][9])
 
                 # Calculate the norm of the jerk raw (13):
-                self.data[13].add(np.sqrt(self.data[8].buffer[-1]**2+self.data[9].buffer[-1]**2+self.data[10].buffer[-1]**2))
+                self.data[13].add(np.sqrt(self.data[8].buffer[-1]**2+self.data[9].buffer[-1]**2+self.data[10].
+                                          buffer[-1]**2))
 
                 # Clear the data buffer
                 self.data_buffer = self.data_buffer[1:]
 
                 # Now begins the calculations:
 
-                self.x_before, self.x_current, self.P_before, self.P_current = self.kalman_filter(self.x_current, self.P_current, self.Fk, self.Bk, self.uk, self.Hk, self.Qk, self.Rk,
-                                                                         self.zk)
+                self.x_before, self.x_current, self.P_before, self.P_current = self.kalman_filter(self.x_current,
+                                                                                                  self.P_current,
+                                                                                                  self.Fk, self.Bk,
+                                                                                                  self.uk, self.Hk,
+                                                                                                  self.Qk, self.Rk,
+                                                                                                  self.zk)
 
                 # 14 - 22 updated
 
@@ -256,7 +259,8 @@ class Raw_Processor(QThread):
                 # Calculate jerk and update 23 - 25, 29:
                 if len(self.data[17].buffer) >= 3:
                     for i in range(17, 19 + 1):
-                        self.data[6 + i].add((3 * self.data[i].buffer[-1] - 4 * self.data[i].buffer[-2] + self.data[i].buffer[-3])
+                        self.data[6 + i].add((3 * self.data[i].buffer[-1] - 4 *
+                                              self.data[i].buffer[-2] + self.data[i].buffer[-3])
                                                 / (2 * Config.dt))
 
                     # Calculate the filtered norm jerk (29):
@@ -272,7 +276,9 @@ class Raw_Processor(QThread):
                 self.P_now.add(self.P_current)
 
                 # Apply Kalman smoothing (30 - 38)
-                self.x_smoothed = self.kalman_smoother(self.x_prior.buffer, self.x_now.buffer, self.P_prior.buffer, self.P_now.buffer, self.Fk)
+                self.x_smoothed = self.kalman_smoother(self.x_prior.buffer,
+                                                       self.x_now.buffer,
+                                                       self.P_prior.buffer, self.P_now.buffer, self.Fk)
 
                 # Add the smoothed x to the array for plotting (2D array 46 x N+2)
                 for i in range(30, 38 + 1):
@@ -287,7 +293,8 @@ class Raw_Processor(QThread):
                 # Calculate jerk and update 39 - 41, 45:
                 if len(self.data[33].buffer) >= 3:
                     for i in range(33, 35 + 1):
-                        self.data[6 + i].add((3 * self.data[i].buffer[-1] - 4 * self.data[i].buffer[-2] + self.data[i].buffer[-3])
+                        self.data[6 + i].add((3 * self.data[i].buffer[-1] - 4 *
+                                              self.data[i].buffer[-2] + self.data[i].buffer[-3])
                                                 / (2 * Config.dt))
 
                     # Calculate the smoothed jerk norm (45)
@@ -295,3 +302,13 @@ class Raw_Processor(QThread):
                         np.sqrt(self.data[39].buffer[-1] ** 2 + self.data[40].buffer[-1]
                                 ** 2 + self.data[41].buffer[-1] ** 2))
 
+                # Once everything is calculated and we have a steady stream going, send the latest data over:
+                if len(self.data[2].buffer) >= 3:
+
+                    send = []
+                    for i in range(len(self.data)):
+                        send.append(self.data[i].buffer[-1])
+
+                    self.raw_processor_to_application_carrier.emit(send)
+                    self.raw_processor_to_plotter_carrier.emit(send)
+                    self.raw_processor_to_storage_carrier.emit(send)

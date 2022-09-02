@@ -14,6 +14,8 @@ class UART_RX(QThread):
         self.buffer_size = buffer_size
         self.UART_buffer = bytearray()
 
+        self.now = time.time()
+
         # Initialize PySerial - specify baud rate
         self.serial_connection = serial.Serial()
 
@@ -106,9 +108,10 @@ class UART_RX(QThread):
                 self.UART_buffer.extend(data)
 
     def run(self):
-        try:
-            while self.serial_connection.is_open:
+        while self.serial_connection.is_open:
+            try:
                 lineprint = self.readline().decode('utf-8').rstrip()
                 self.serial_to_manager_carrier.emit(lineprint)
-        except Exception as e:
-            print('There was a temporary error connecting to port - please wait a second.')
+                self.now = time.time()
+            except Exception as e:
+                print(e)

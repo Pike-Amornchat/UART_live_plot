@@ -1,5 +1,8 @@
 from Modules import *
 from Raw_Processor import *
+from Application_Processor import *
+from GUI_Plotter import *
+from Storage import *
 
 class Data_Manager(QThread):
 
@@ -15,9 +18,11 @@ class Data_Manager(QThread):
         self.serial_connection = serial_connection
         self.user_connection = user_connection
         self.raw_processor_connection = Raw_Processor(data_manager=self)
-        self.application_processor_connection = application_processor_connection
-        self.plotter_connection = plotter_connection
-        self.storage_connection = storage_connection
+        self.plotter_connection = Plotter(data_manager=self,raw_processor=self.raw_processor_connection)
+
+        # self.storage_connection = Storage(data_manager=self,raw_processor=self.raw_processor_connection)
+        # self.application_processor_connection = Application_Processor(data_manager=self,
+        #                                                               raw_processor=self.raw_processor_connection)
 
         # Connect to the UART and UserInput Signal carriers
         self.serial_connection.serial_to_manager_carrier.connect(self.receive_UART)
@@ -39,6 +44,7 @@ class Data_Manager(QThread):
 
     # Signal receive methods
     def receive_UART(self,input_buffer=''):
+        # print(time.time())
         self.raw_UART_input.append(input_buffer)
 
     def receive_user_input(self,input_buffer=''):
@@ -83,20 +89,20 @@ class Data_Manager(QThread):
     def full_reset(self):
         # self.storage_connection.reset()
         # self.plotter_connection.reset()
-        # self.raw_processor_connection.reset()
         # self.application_processor_connection.reset()
-        # self.serial_connection.reset()
+        self.raw_processor_connection.reset()
+        self.serial_connection.reset()
         self.data_manager_init()
 
     def run(self):
-
+        # return
         while True:
-            # Optimize the CPU - if nothing in then don't kill the CPU
-
-            if len(self.raw_UART_input) == 0:
-                time.sleep(0.0001)
-            if len(self.user_input) == 0:
-                time.sleep(0.0001)
+            # # Optimize the CPU - if nothing in then don't kill the CPU
+            #
+            # if len(self.raw_UART_input) == 0:
+            #     time.sleep(0.0001)
+            # if len(self.user_input) == 0:
+            #     time.sleep(0.0001)
 
             while len(self.raw_UART_input) > 0 or len(self.user_input) > 0:
                 command = ''
@@ -158,10 +164,8 @@ class Data_Manager(QThread):
 
                     self.user_input = []
 
-                elif len(self.raw_UART_input) > 0:
-
+                if len(self.raw_UART_input) > 0:
                     try:
-
                         # The raw input coming in will be the first one in our stack
                         self.raw = self.raw_UART_input[0]
 
