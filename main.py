@@ -26,8 +26,6 @@ class Application(QThread):
 
         self.Data_Manager = Data_Manager(serial_connection=self.UART_Connection,user_connection=self.UserInputThread)
 
-        self.Raw_Processor = Raw_Processor(self.Data_Manager)
-
 
 
 

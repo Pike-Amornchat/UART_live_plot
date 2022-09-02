@@ -4,6 +4,10 @@ class Config:
         baud_rate = 115200
         buffer_size = 10000
 
+        # Plotting settings
+        plot_size = 10
+        dt = 1/20
+
         #  labels = dict[
 
         #          "0":'Time [s]',
