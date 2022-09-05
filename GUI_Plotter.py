@@ -18,12 +18,13 @@ class Plotter(QThread):
 
     def plotter_init(self):
         self.data_buffer = [Dynamic_RingBuff(Config.plot_size + 2) for i in range(46)]
-        self.start()
+        self.start(priority=QThread.NormalPriority)
 
     def run(self):
         # return
         while True:
             if len(self.data_buffer[0].buffer) > 0:
-                for i in range(len(self.data_buffer)):
-                    print(str(i) + ' ',self.data_buffer[i].buffer)
-                print('\n')
+                pass
+                # for i in range(len(self.data_buffer)):
+                #     print(str(i) + ' ',self.data_buffer[i].buffer)
+                # print('\n')

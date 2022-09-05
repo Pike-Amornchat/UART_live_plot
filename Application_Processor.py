@@ -18,7 +18,7 @@ class Application_Processor(QThread):
 
     def application_init(self):
         self.data_buffer = [Dynamic_RingBuff(Config.plot_size + 2) for i in range(46)]
-        self.start()
+        # self.start(priority=QThread.LowPriority)
 
     def run(self):
         while True:

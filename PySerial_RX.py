@@ -73,7 +73,7 @@ class UART_RX(QThread):
 
             print('Successfully connected to %s'%self.serial_connection.port)
             # Start the QT thread
-            self.start()
+            self.start(priority=QThread.HighPriority)
 
         except Exception as error:
             available_ports = self.list_ports()
@@ -88,30 +88,36 @@ class UART_RX(QThread):
         self.serial_connection.close()
         self.terminate()
 
-    def readline(self):
-        # Copy paste from stack overflow
-        i = self.UART_buffer.find(b"\n")
-
-        if i >= 0:
-            r = self.UART_buffer[:i + 1]
-            self.UART_buffer = self.UART_buffer[i + 1:]
-            return r
-
-        while True:
-            data = self.serial_connection.read_all()
-            i = data.find(b"\n")
-            if i >= 0:
-                r = self.UART_buffer + data[:i + 1]
-                self.UART_buffer[0:] = data[i + 1:]
-                return r
-            else:
-                self.UART_buffer.extend(data)
+    # def readline(self):
+    #     # Copy paste from stack overflow
+    #     i = self.UART_buffer.find(b"\n")
+    #
+    #     if i >= 0:
+    #         r = self.UART_buffer[:i + 1]
+    #         self.UART_buffer = self.UART_buffer[i + 1:]
+    #         return r
+    #
+    #     while True:
+    #         i = data.find(b"\n")
+    #         if i >= 0:
+    #             r = self.UART_buffer + data[:i + 1]
+    #             self.UART_buffer[0:] = data[i + 1:]
+    #             return r
+    #         else:
+    #             self.UART_buffer.extend(data)
 
     def run(self):
         while self.serial_connection.is_open:
             try:
-                lineprint = self.readline().decode('utf-8').rstrip()
-                self.serial_to_manager_carrier.emit(lineprint)
-                self.now = time.time()
+                data = self.serial_connection.read_all()
+                # print('3', datetime.datetime.now(), self.serial_connection.in_waiting)
+                self.UART_buffer.extend(data)
+
+                i = self.UART_buffer.find(b"\n")
+                if i >= 0:
+                    line = self.UART_buffer[:i+1].decode('utf-8').rstrip(',')
+                    self.UART_buffer = self.UART_buffer[i + 1:]
+                    print(datetime.datetime.now(), len(self.UART_buffer), line)
+                    self.serial_to_manager_carrier.emit(line)
             except Exception as e:
                 print(e)

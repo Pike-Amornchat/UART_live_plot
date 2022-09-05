@@ -13,7 +13,7 @@ class UserInput(QThread):
     def reset(self):
         self.terminate()
         self.command = ''
-        self.start()
+        self.start(priority=QThread.TimeCriticalPriority)
 
     def run(self):
         # return

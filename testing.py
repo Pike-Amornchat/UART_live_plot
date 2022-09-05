@@ -1,8 +1,9 @@
 from Modules import *
 
-buf = Dynamic_RingBuff(6)
-buf.add(10)
-start = time.time()
-print('hi')
-end = time.time()
-print(end-start)
+# now = str(datetime.datetime.now()).replace(':','_')
+# with open('%s.txt'%now, 'w') as f:
+#     f.write('Create a new text file!')
+
+hi = str(input('pls input'))
+print('working')
+print(hi)
