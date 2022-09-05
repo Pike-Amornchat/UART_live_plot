@@ -19,12 +19,14 @@ class Application(QThread):
             self.app = QApplication(sys.argv)
         else:
             self.app = QApplication.instance()
+        
+        
 
         # Initialize PySerial connection
         self.UART_Connection = UART_RX(port=Config.port, baud_rate=Config.baud_rate, buffer_size=Config.buffer_size)
         self.UserInputThread = UserInput()
 
-        self.Data_Manager = Data_Manager(serial_connection=self.UART_Connection,user_connection=self.UserInputThread)
+        self.Data_Manager = Data_Manager(main_app = self,serial_connection=self.UART_Connection,user_connection=self.UserInputThread)
 
 
 
@@ -37,4 +39,5 @@ class Application(QThread):
 
 
 if __name__ == '__main__':
-    sys.exit(Application())
+    app = Application()
+    sys.exit(app)

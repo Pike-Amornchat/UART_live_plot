@@ -5,7 +5,7 @@ class UART_RX(QThread):
 
     serial_to_manager_carrier = Signal(str)
 
-    def __init__(self, port='COM9', baud_rate=115200, buffer_size=10000):
+    def __init__(self, port='COM14', baud_rate=115200, buffer_size=10000):
         super(UART_RX, self).__init__()
 
         # Attributes for PySerial setup
@@ -24,6 +24,8 @@ class UART_RX(QThread):
 
         # Connect to the COM port
         self.connect_port()
+
+        # print("UART_RX ThreadId:",self.currentThreadId())
 
     def list_ports(self):
 
@@ -54,9 +56,9 @@ class UART_RX(QThread):
     def reset(self):
         self.UART_buffer = bytearray()
 
-        self.close_port()
+        # self.close_port()
 
-        self.connect_port()
+        # self.connect_port()
 
     # Connect port - used in initialization
     def connect_port(self):
@@ -73,7 +75,7 @@ class UART_RX(QThread):
 
             print('Successfully connected to %s'%self.serial_connection.port)
             # Start the QT thread
-            self.start()
+            self.start(priority = QThread.TimeCriticalPriority)
 
         except Exception as error:
             available_ports = self.list_ports()
@@ -108,10 +110,16 @@ class UART_RX(QThread):
                 self.UART_buffer.extend(data)
 
     def run(self):
+        # while True:
+        #     self.serial_to_manager_carrier.emit("G   141692, 27.182,  -1.677,  -0.436,   9.398, -0.002,  0.000, -0.002,   9.556,  0.003")
+        #     time.sleep(1.0/40.0)
+
         while self.serial_connection.is_open:
             try:
                 lineprint = self.readline().decode('utf-8').rstrip()
                 self.serial_to_manager_carrier.emit(lineprint)
-                self.now = time.time()
+                # self.now = time.time()
+                # print(lineprint)
+
             except Exception as e:
                 print(e)

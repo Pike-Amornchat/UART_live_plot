@@ -5,6 +5,7 @@ import serial
 import numpy as np
 import time
 import collections
+import random
 import pyqtgraph as pg
 
 from PySide6 import QtCore, QtGui

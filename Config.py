@@ -1,6 +1,6 @@
 class Config:
         # Serial port config settings
-        port = 'COM9'
+        port = 'COM16'
         baud_rate = 115200
         buffer_size = 100000
 
@@ -8,70 +8,70 @@ class Config:
         plot_size = 10
         dt = 1/20
 
-        #  labels = dict[
+        labels = {
 
-        #          "0":'Time [s]',
-        #          "1":'Temperature',
+                "0":'Time [s]',
+                "1":'Temperature',
 
-        #          "2":'Acceleration (x)',
-        #          "3":'Acceleration (y)',
-        #          "4":'Acceleration (z)',
+                "2":'Acceleration (x)',
+                "3":'Acceleration (y)',
+                "4":'Acceleration (z)',
 
-        #          "5":'Angular Velocity (x)',
-        #          "6":'Angular Velocity (y)',
-        #          "7":'Angular Velocity (z)',
+                "5":'Angular Velocity (x)',
+                "6":'Angular Velocity (y)',
+                "7":'Angular Velocity (z)',
 
-        #          "8":'Jerk (x)',
-        #          "9":'Jerk (y)',
-        #          "10":'Jerk (z)',
+                "8":'Jerk (x)',
+                "9":'Jerk (y)',
+                "10":'Jerk (z)',
 
-        #          "11":'Norm(Acceleration)',
-        #          "12":'Norm(Angular Velocity)',
-        #          "13":'Norm(Jerk)',
+                "11":'Norm(Acceleration)',
+                "12":'Norm(Angular Velocity)',
+                "13":'Norm(Jerk)',
 
-        #          "14":'Filtered Velocity (x)',
-        #          "15":'Filtered Velocity (y)',
-        #          "16":'Filtered Velocity (z)',
+                "14":'Filtered Velocity (x)',
+                "15":'Filtered Velocity (y)',
+                "16":'Filtered Velocity (z)',
 
-        #          "17":'Filtered Acceleration (x)',
-        #          "18":'Filtered Acceleration (y)',
-        #          "19":'Filtered Acceleration (z)',
+                "17":'Filtered Acceleration (x)',
+                "18":'Filtered Acceleration (y)',
+                "19":'Filtered Acceleration (z)',
 
-        #          "20":'Filtered Angular Velocity (x)',
-        #          "21":'Filtered Angular Velocity (y)',
-        #          "22":'Filtered Angular Velocity (z)',
+                "20":'Filtered Angular Velocity (x)',
+                "21":'Filtered Angular Velocity (y)',
+                "22":'Filtered Angular Velocity (z)',
 
-        #          "23":'Filtered Jerk (x)',
-        #          "24":'Filtered Jerk (y)',
-        #          "25":'Filtered Jerk (z)',
+                "23":'Filtered Jerk (x)',
+                "24":'Filtered Jerk (y)',
+                "25":'Filtered Jerk (z)',
 
-        #          "26":'Filtered Norm(Velocity)',
-        #          "27":'Filtered Norm(Acceleration)',
-        #          "28":'Filtered Norm(Angular Velocity)',
-        #          "29":'Filtered Norm(Jerk)',
+                "26":'Filtered Norm(Velocity)',
+                "27":'Filtered Norm(Acceleration)',
+                "28":'Filtered Norm(Angular Velocity)',
+                "29":'Filtered Norm(Jerk)',
 
-        #          "30":'Smoothed Velocity (x)',
-        #          "31":'Smoothed Velocity (y)',
-        #          "32":'Smoothed Velocity (z)',
+                "30":'Smoothed Velocity (x)',
+                "31":'Smoothed Velocity (y)',
+                "32":'Smoothed Velocity (z)',
 
-        #          "33":'Smoothed Acceleration (x)',
-        #          "34":'Smoothed Acceleration (y)',
-        #          "35":'Smoothed Acceleration (z)',
+                "33":'Smoothed Acceleration (x)',
+                "34":'Smoothed Acceleration (y)',
+                "35":'Smoothed Acceleration (z)',
 
-        #          "36":'Smoothed Angular Velocity (x)',
-        #          "37":'Smoothed Angular Velocity (y)',
-        #          "38":'Smoothed Angular Velocity (z)',
+                "36":'Smoothed Angular Velocity (x)',
+                "37":'Smoothed Angular Velocity (y)',
+                "38":'Smoothed Angular Velocity (z)',
 
-        #          "39":'Smoothed Jerk (x)',
-        #          "40":'Smoothed Jerk (y)',
-        #          "41":'Smoothed Jerk (z)',
+                "39":'Smoothed Jerk (x)',
+                "40":'Smoothed Jerk (y)',
+                "41":'Smoothed Jerk (z)',
 
-        #          "42":'Smoothed Norm(Velocity)',
-        #          "43":'Smoothed Norm(Acceleration)',
-        #          "44":'Smoothed Norm(Angular Velocity)',
-        #          "45":'Smoothed Norm(Jerk)',
+                "42":'Smoothed Norm(Velocity)',
+                "43":'Smoothed Norm(Acceleration)',
+                "44":'Smoothed Norm(Angular Velocity)',
+                "45":'Smoothed Norm(Jerk)',
 
-        #          ]
+        }
 
         categories = {
                      'raw': {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
@@ -92,3 +92,14 @@ class Config:
                              20, 21, 22, 23, 24, 25, 26, 27, 28, 29,30, 31, 32, 33, 34, 35, 36,
                              37, 38, 39, 40, 41, 42, 43, 44, 45}
         }
+        pen = [
+                (237, 12, 12),
+                (237, 94, 12),
+                (237, 169, 12),
+                (218, 237, 12),
+                (106, 237, 12),
+                (12, 237, 68),
+                (12, 237, 151),
+                (12, 230, 237),
+                (19, 12, 237),
+        ]

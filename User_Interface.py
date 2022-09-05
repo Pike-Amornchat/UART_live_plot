@@ -8,7 +8,7 @@ class UserInput(QThread):
     def __init__(self):
         super(UserInput, self).__init__()
         self.command = ''
-        self.start()
+        self.start(priority = QThread.LowestPriority)
 
     def reset(self):
         self.terminate()

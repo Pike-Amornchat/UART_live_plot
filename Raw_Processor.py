@@ -17,6 +17,8 @@ class Raw_Processor(QThread):
 
         self.init_raw_processor()
 
+        # print("Raw_Processor ThreadId:",self.currentThreadId())
+
     def init_raw_processor(self):
 
         # Initializing variables
@@ -57,7 +59,7 @@ class Raw_Processor(QThread):
         self.time = Dynamic_RingBuff(Config.plot_size + 2)
         self.temp = Dynamic_RingBuff(Config.plot_size + 2)
 
-        self.start()
+        # self.start(priority = QThread.NormalPriority)
 
     def reset(self):
         self.init_raw_processor()
@@ -191,6 +193,7 @@ class Raw_Processor(QThread):
 
     def receive_data(self,input_buffer=''):
         self.data_buffer.append(input_buffer)
+        self.calculate()
 
     def receive_covariance(self,input_buffer=''):
         self.cov_buffer.append(input_buffer)
@@ -200,115 +203,116 @@ class Raw_Processor(QThread):
         self.x_current, self.P_current, self.Fk, self.Bk, self.uk, \
         self.Hk, self.Qk, self.Rk = self.init_kalman(Config.dt, self.cov_acc, self.cov_ang, self.R)
 
-    def run(self):
+    def calculate(self):
         # return
-        while True:
-            if len(self.data_buffer) != 0:
-                # 0 - 7 updated (time, temp, raw acc, raw ang)
+        # while True:
+        if len(self.data_buffer) != 0:
+            # 0 - 7 updated (time, temp, raw acc, raw ang)
 
-                # Append time
-                self.data[0].add(self.data_buffer[0][0])
+            # Append time
+            self.data[0].add(self.data_buffer[0][0])
 
-                # Append temperature
-                self.data[1].add(self.data_buffer[0][1])
+            # Append temperature
+            self.data[1].add(self.data_buffer[0][1])
 
-                # Save zk
-                self.zk = np.transpose(np.asarray([self.data_buffer[0][2:7+1]]))
-                for i in range(2,7 + 1):
-                    self.data[i].add(self.data_buffer[0][i])
+            # Save zk
+            self.zk = np.transpose(np.asarray([self.data_buffer[0][2:7+1]]))
+            for i in range(2,7 + 1):
+                self.data[i].add(self.data_buffer[0][i])
 
-                # Calculate jerk and update 8 - 10:
-                if len(self.data[2].buffer) >= 3:
-                    for i in range(2, 4 + 1):
-                        self.data[6+i].add((3 * self.data[i].buffer[-1] - 4 * self.data[i].
-                                            buffer[-2] + self.data[i].buffer[-3])
-                                              / (2 * Config.dt))
+            # Calculate jerk and update 8 - 10:
+            if len(self.data[2].buffer) >= 3:
+                for i in range(2, 4 + 1):
+                    self.data[6+i].add((3 * self.data[i].buffer[-1] - 4 * self.data[i].
+                                        buffer[-2] + self.data[i].buffer[-3])
+                                            / (2 * Config.dt))
 
-                # Update 11 - 12, the norms of angular and acceleration raw
-                self.data[11].add(self.data_buffer[0][8])
-                self.data[12].add(self.data_buffer[0][9])
+            # Update 11 - 12, the norms of angular and acceleration raw
+            self.data[11].add(self.data_buffer[0][8])
+            self.data[12].add(self.data_buffer[0][9])
 
-                # Calculate the norm of the jerk raw (13):
-                self.data[13].add(np.sqrt(self.data[8].buffer[-1]**2+self.data[9].buffer[-1]**2+self.data[10].
-                                          buffer[-1]**2))
+            # Calculate the norm of the jerk raw (13):
+            self.data[13].add(np.sqrt(self.data[8].buffer[-1]**2+self.data[9].buffer[-1]**2+self.data[10].
+                                        buffer[-1]**2))
 
-                # Clear the data buffer
-                self.data_buffer = self.data_buffer[1:]
+            # Clear the data buffer
+            self.data_buffer = self.data_buffer[1:]
 
-                # Now begins the calculations:
+            # Now begins the calculations:
 
-                self.x_before, self.x_current, self.P_before, self.P_current = self.kalman_filter(self.x_current,
-                                                                                                  self.P_current,
-                                                                                                  self.Fk, self.Bk,
-                                                                                                  self.uk, self.Hk,
-                                                                                                  self.Qk, self.Rk,
-                                                                                                  self.zk)
+            self.x_before, self.x_current, self.P_before, self.P_current = self.kalman_filter(self.x_current,
+                                                                                                self.P_current,
+                                                                                                self.Fk, self.Bk,
+                                                                                                self.uk, self.Hk,
+                                                                                                self.Qk, self.Rk,
+                                                                                                self.zk)
 
-                # 14 - 22 updated
+            # 14 - 22 updated
 
-                # Add the filtered x to the array for plotting (2D array 46 x N+2)
-                for i in range(14,22 + 1):
-                    self.data[i].add(self.x_current[i-14][0])
+            # Add the filtered x to the array for plotting (2D array 46 x N+2)
+            for i in range(14,22 + 1):
+                self.data[i].add(self.x_current[i-14][0])
 
-                # Calculate the filtered norm and update 26 - 28 (without jerk):
-                for i in range(3):
-                    self.data[26 + i].add(
-                        np.sqrt(self.data[(14 + 3 * i) + 0].buffer[-1] ** 2 + self.data[(14 + 3 * i) + 1].buffer[-1]
-                                ** 2 + self.data[(14 + 3 * i) + 2].buffer[-1] ** 2))
+            # Calculate the filtered norm and update 26 - 28 (without jerk):
+            for i in range(3):
+                self.data[26 + i].add(
+                    np.sqrt(self.data[(14 + 3 * i) + 0].buffer[-1] ** 2 + self.data[(14 + 3 * i) + 1].buffer[-1]
+                            ** 2 + self.data[(14 + 3 * i) + 2].buffer[-1] ** 2))
 
-                # Calculate jerk and update 23 - 25, 29:
-                if len(self.data[17].buffer) >= 3:
-                    for i in range(17, 19 + 1):
-                        self.data[6 + i].add((3 * self.data[i].buffer[-1] - 4 *
-                                              self.data[i].buffer[-2] + self.data[i].buffer[-3])
-                                                / (2 * Config.dt))
+            # Calculate jerk and update 23 - 25, 29:
+            if len(self.data[17].buffer) >= 3:
+                for i in range(17, 19 + 1):
+                    self.data[6 + i].add((3 * self.data[i].buffer[-1] - 4 *
+                                            self.data[i].buffer[-2] + self.data[i].buffer[-3])
+                                            / (2 * Config.dt))
 
-                    # Calculate the filtered norm jerk (29):
-                    self.data[29].add(
-                        np.sqrt(self.data[23].buffer[-1] ** 2 + self.data[24].buffer[-1]
-                                ** 2 + self.data[25].buffer[-1] ** 2))
+                # Calculate the filtered norm jerk (29):
+                self.data[29].add(
+                    np.sqrt(self.data[23].buffer[-1] ** 2 + self.data[24].buffer[-1]
+                            ** 2 + self.data[25].buffer[-1] ** 2))
 
-                # Add the rest into the Kalman smoother arrays
+            # Add the rest into the Kalman smoother arrays
 
-                self.x_prior.add(self.x_before)
-                self.x_now.add(self.x_current)
-                self.P_prior.add(self.P_before)
-                self.P_now.add(self.P_current)
+            self.x_prior.add(self.x_before)
+            self.x_now.add(self.x_current)
+            self.P_prior.add(self.P_before)
+            self.P_now.add(self.P_current)
 
-                # Apply Kalman smoothing (30 - 38)
-                self.x_smoothed = self.kalman_smoother(self.x_prior.buffer,
-                                                       self.x_now.buffer,
-                                                       self.P_prior.buffer, self.P_now.buffer, self.Fk)
+            # Apply Kalman smoothing (30 - 38)
+            self.x_smoothed = self.kalman_smoother(self.x_prior.buffer,
+                                                    self.x_now.buffer,
+                                                    self.P_prior.buffer, self.P_now.buffer, self.Fk)
 
-                # Add the smoothed x to the array for plotting (2D array 46 x N+2)
-                for i in range(30, 38 + 1):
-                    self.data[i].add(self.x_smoothed[i-30][0])
+            # Add the smoothed x to the array for plotting (2D array 46 x N+2)
+            for i in range(30, 38 + 1):
+                self.data[i].add(self.x_smoothed[i-30][0])
 
-                # Calculate the filtered norm and update 42 - 44:
-                for i in range(3):
-                    self.data[42 + i].add(
-                        np.sqrt(self.data[(30 + 3 * i) + 0].buffer[-1] ** 2 + self.data[(30 + 3 * i) + 1].buffer[-1]
-                                ** 2 + self.data[(30 + 3 * i) + 2].buffer[-1] ** 2))
+            # Calculate the filtered norm and update 42 - 44:
+            for i in range(3):
+                self.data[42 + i].add(
+                    np.sqrt(self.data[(30 + 3 * i) + 0].buffer[-1] ** 2 + self.data[(30 + 3 * i) + 1].buffer[-1]
+                            ** 2 + self.data[(30 + 3 * i) + 2].buffer[-1] ** 2))
 
-                # Calculate jerk and update 39 - 41, 45:
-                if len(self.data[33].buffer) >= 3:
-                    for i in range(33, 35 + 1):
-                        self.data[6 + i].add((3 * self.data[i].buffer[-1] - 4 *
-                                              self.data[i].buffer[-2] + self.data[i].buffer[-3])
-                                                / (2 * Config.dt))
+            # Calculate jerk and update 39 - 41, 45:
+            if len(self.data[33].buffer) >= 3:
+                for i in range(33, 35 + 1):
+                    self.data[6 + i].add((3 * self.data[i].buffer[-1] - 4 *
+                                            self.data[i].buffer[-2] + self.data[i].buffer[-3])
+                                            / (2 * Config.dt))
 
-                    # Calculate the smoothed jerk norm (45)
-                    self.data[45].add(
-                        np.sqrt(self.data[39].buffer[-1] ** 2 + self.data[40].buffer[-1]
-                                ** 2 + self.data[41].buffer[-1] ** 2))
+                # Calculate the smoothed jerk norm (45)
+                self.data[45].add(
+                    np.sqrt(self.data[39].buffer[-1] ** 2 + self.data[40].buffer[-1]
+                            ** 2 + self.data[41].buffer[-1] ** 2))
 
-                # Once everything is calculated and we have a steady stream going, send the latest data over:
-                if len(self.data[2].buffer) >= 3:
+            # Once everything is calculated and we have a steady stream going, send the latest data over:
+            if len(self.data[2].buffer) >= 3:
 
-                    send = []
-                    for i in range(len(self.data)):
-                        send.append(self.data[i].buffer[-1])
+                send = []
+                for i in range(len(self.data)):
+                    send.append(self.data[i].buffer[-1])
 
-                    self.raw_processor_to_application_carrier.emit(send)
-                    self.raw_processor_to_plotter_carrier.emit(send)
-                    self.raw_processor_to_storage_carrier.emit(send)
+                self.raw_processor_to_application_carrier.emit(send)
+                self.raw_processor_to_plotter_carrier.emit(send)
+                self.raw_processor_to_storage_carrier.emit(send)
+                # print(time.time())
