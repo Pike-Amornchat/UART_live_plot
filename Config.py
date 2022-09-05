@@ -1,6 +1,6 @@
 class Config:
         # Serial port config settings
-        port = 'COM16'
+        port = 'COM9'
         baud_rate = 115200
         buffer_size = 100000
 
