@@ -5,7 +5,7 @@ class Config:
         buffer_size = 100000
 
         # Plotting settings
-        plot_size = 10
+        plot_size = 100
         dt = 1/20
 
         labels = {

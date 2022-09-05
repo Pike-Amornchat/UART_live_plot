@@ -309,10 +309,12 @@ class Raw_Processor(QThread):
             if len(self.data[2].buffer) >= 3:
 
                 send = []
+                send_str = []
                 for i in range(len(self.data)):
                     send.append(self.data[i].buffer[-1])
+                    send_str.append(str(self.data[i].buffer[-1]))
 
                 self.raw_processor_to_application_carrier.emit(send)
                 self.raw_processor_to_plotter_carrier.emit(send)
-                self.raw_processor_to_storage_carrier.emit(send)
+                self.raw_processor_to_storage_carrier.emit(send_str)
                 # print(time.time())

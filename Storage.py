@@ -11,14 +11,14 @@ class Storage(QThread):
         self.raw_processor_connection = raw_processor
 
         self.running = False
-
+        self.f = open('0.txt', 'w')
+        self.f.close()
         self.storage_init()
 
         self.raw_processor_connection.raw_processor_to_storage_carrier.connect(self.receive_raw)
 
     def receive_raw(self,input_buffer=''):
         if self.running:
-            print('new data')
             self.f.write('%s,'%datetime.datetime.now() + ','.join(input_buffer) + '\n')
 
     def storage_init(self):

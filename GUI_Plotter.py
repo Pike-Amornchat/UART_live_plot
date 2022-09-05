@@ -24,17 +24,18 @@ class Plotter(QThread):
         # print("Plotter ThreadId:",self.currentThreadId())
 
     def who_to_plot(self,plot_index_list = []):
+        self.plotting_index = plot_index_list
         print("Got new plot",time.time())
         del self.curveHandler
         del self.pltHandler
         self.win.clear()
         self.plotter_init()
-        cirve_name = []
+        curve_name = []
         pen = []
         for index in plot_index_list:
-            cirve_name.append(Config.labels[str(index)])
+            curve_name.append(Config.labels[str(index)])
             pen.append(Config.pen[random.randint(0, len(Config.pen)-1)])
-        self.Add_new_plot(curve_number = len(plot_index_list),timewindow=10,pen = pen, curve_name = cirve_name )
+        self.Add_new_plot(curve_number = len(plot_index_list),timewindow=10,pen = pen, curve_name = curve_name )
 
         print("Ok to plot",time.time())
 
@@ -42,13 +43,19 @@ class Plotter(QThread):
         for i in range(len(self.data_buffer)):
             self.data_buffer[i].add(input_buffer[i])
 
-        print(self.data_buffer)
+        counter = 0
+        for i in self.plotting_index:
+            self.y[counter] = self.data_buffer[i].buffer
+            self.x[counter] = self.data_buffer[0].buffer
+            counter += 1
 
-        for i in range(1,len(self.curveHandler)):
-            self.databufferHandler[i].append( input_buffer[i]) #self.getdata()
-            self.y[i][:] = self.databufferHandler[i]
+        print(self.x)
+        print(self.y)
+        print(len(self.x))
+        print(len(self.y))
+        print(len(self.curveHandler))
         # self.x = self.databufferHandler[0]
-        for i in range(1,len(self.curveHandler)):
+        for i in range(len(self.curveHandler)):
             self.curveHandler[i].setData(self.x[i], self.y[i])
         
         self.win.update()
@@ -56,6 +63,8 @@ class Plotter(QThread):
     def plotter_init(self):
 
         self.data_buffer = [Dynamic_RingBuff(Config.plot_size + 2) for i in range(46)]
+
+        self.plotting_index = []
 
          #data setup
         self.plot_num = 0
