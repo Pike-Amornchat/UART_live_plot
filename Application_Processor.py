@@ -19,7 +19,7 @@ class Application_Processor(QThread):
             self.data_buffer[i].add(input_buffer[i])
 
     def application_init(self):
-        self.data_buffer = [Dynamic_RingBuff(Config.plot_size + 2) for i in range(46)]
+        self.data_buffer = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
         # self.start()
 
     def run(self):

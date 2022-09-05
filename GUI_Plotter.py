@@ -24,12 +24,12 @@ class Plotter(QThread):
         # print("Plotter ThreadId:",self.currentThreadId())
 
     def who_to_plot(self,plot_index_list = []):
-        self.plotting_index = plot_index_list
         print("Got new plot",time.time())
         del self.curveHandler
         del self.pltHandler
         self.win.clear()
         self.plotter_init()
+        self.plotting_index = plot_index_list
         curve_name = []
         pen = []
         for index in plot_index_list:
@@ -45,24 +45,17 @@ class Plotter(QThread):
 
         counter = 0
         for i in self.plotting_index:
-            self.y[counter] = self.data_buffer[i].buffer
-            self.x[counter] = self.data_buffer[0].buffer
+            self.y[i] = self.data_buffer[i].buffer
+            self.x[i] = self.data_buffer[0].buffer
+            self.curveHandler[counter].setData(self.x[i], self.y[i])
+            
             counter += 1
-
-        print(self.x)
-        print(self.y)
-        print(len(self.x))
-        print(len(self.y))
-        print(len(self.curveHandler))
-        # self.x = self.databufferHandler[0]
-        for i in range(len(self.curveHandler)):
-            self.curveHandler[i].setData(self.x[i], self.y[i])
         
         self.win.update()
 
     def plotter_init(self):
 
-        self.data_buffer = [Dynamic_RingBuff(Config.plot_size + 2) for i in range(46)]
+        self.data_buffer = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
 
         self.plotting_index = []
 
@@ -70,9 +63,9 @@ class Plotter(QThread):
         self.plot_num = 0
         self.pltHandler = []
         self.curveHandler = []
-        self.databufferHandler = []
-        self.x = []
-        self.y = []
+        # self.databufferHandler = []
+        self.x = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
+        self.y = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
 
         self.feedInDataHandler = []
         # Data stuff
@@ -96,13 +89,8 @@ class Plotter(QThread):
         self.plot_num += 1
 
     def Add_curve(self,plt = None, timewindow = 10, pen = (255,0,0), Name = ""):
-        self.databuffer = collections.deque([0.0]*self._bufsize, self._bufsize)
-        self.databufferHandler.append(self.databuffer)
 
-        self.x.append( np.linspace(-timewindow, 0.0, self._bufsize) )
-        self.y.append( np.zeros(self._bufsize, dtype=np.float) )
-
-        self.curve = plt.plot(self.x[-1], self.y[-1], pen=pen, name = Name)
+        self.curve = plt.plot(self.x[-1].buffer, self.y[-1].buffer, pen=pen, name = Name)
         self.curveHandler.append(self.curve)
 
 
