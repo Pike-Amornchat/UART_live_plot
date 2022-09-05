@@ -42,6 +42,8 @@ class Plotter(QThread):
         for i in range(len(self.data_buffer)):
             self.data_buffer[i].add(input_buffer[i])
 
+        print(self.data_buffer)
+
         for i in range(1,len(self.curveHandler)):
             self.databufferHandler[i].append( input_buffer[i]) #self.getdata()
             self.y[i][:] = self.databufferHandler[i]

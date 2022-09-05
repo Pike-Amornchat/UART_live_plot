@@ -23,7 +23,7 @@ class Data_Manager(QThread):
         
         
 
-        # self.storage_connection = Storage(data_manager=self,raw_processor=self.raw_processor_connection)
+        self.storage_connection = Storage(data_manager=self,raw_processor=self.raw_processor_connection)
         # self.application_processor_connection = Application_Processor(data_manager=self,
         #                                                               raw_processor=self.raw_processor_connection)
 
@@ -96,7 +96,7 @@ class Data_Manager(QThread):
         self.start(priority = QThread.TimeCriticalPriority)
 
     def full_reset(self):
-        # self.storage_connection.reset()
+        self.storage_connection.reset()
         # self.plotter_connection.reset()
         # self.application_processor_connection.reset()
         self.raw_processor_connection.reset()
@@ -130,9 +130,9 @@ class Data_Manager(QThread):
 
                 if command == 'store':
                     if option == 'start':
-                        print('Start storing data')
+                        self.storage_connection.start_storing()
                     elif option == 'stop':
-                        print('Stop storing data')
+                        self.storage_connection.stop()
 
                 elif command == 'connection':
                     if option == 'setport':
@@ -235,7 +235,6 @@ class Data_Manager(QThread):
                             # If now ready to transmit:
                             if self.transmitting == 1:
                                 self.manager_to_raw_processor_carrier.emit(self.line)
-                            # self.manager_to_raw_processor_carrier.emit(self.line)
                 except Exception as e:
                     print(e)
                     print('Incomplete line.')
