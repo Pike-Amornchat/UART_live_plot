@@ -19,19 +19,11 @@ class Application(QThread):
             self.app = QApplication(sys.argv)
         else:
             self.app = QApplication.instance()
-        
-        
 
         # Initialize PySerial connection
         self.UART_Connection = UART_RX(port=Config.port, baud_rate=Config.baud_rate, buffer_size=Config.buffer_size)
         self.UserInputThread = UserInput()
-
         self.Data_Manager = Data_Manager(main_app = self,serial_connection=self.UART_Connection,user_connection=self.UserInputThread)
-
-
-
-
-        # Define the plot
 
         # We have created objects, but we haven't started running so this tells it to start
         self.app.processEvents()

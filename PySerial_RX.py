@@ -90,36 +90,18 @@ class UART_RX(QThread):
         self.serial_connection.close()
         self.terminate()
 
-    def readline(self):
-        # Copy paste from stack overflow
-        i = self.UART_buffer.find(b"\n")
-
-        if i >= 0:
-            r = self.UART_buffer[:i + 1]
-            self.UART_buffer = self.UART_buffer[i + 1:]
-            return r
-
-        while True:
-            data = self.serial_connection.read_all()
-            i = data.find(b"\n")
-            if i >= 0:
-                r = self.UART_buffer + data[:i + 1]
-                self.UART_buffer[0:] = data[i + 1:]
-                return r
-            else:
-                self.UART_buffer.extend(data)
-
     def run(self):
-        # while True:
-        #     self.serial_to_manager_carrier.emit("G   141692, 27.182,  -1.677,  -0.436,   9.398, -0.002,  0.000, -0.002,   9.556,  0.003")
-        #     time.sleep(1.0/40.0)
-
         while self.serial_connection.is_open:
             try:
-                lineprint = self.readline().decode('utf-8').rstrip()
-                self.serial_to_manager_carrier.emit(lineprint)
-                # self.now = time.time()
-                # print(lineprint)
+                data = self.serial_connection.read_all()
+                self.UART_buffer.extend(data)
+
+                i = self.UART_buffer.find(b'\n')
+                if i >= 0:
+                    line = self.UART_buffer[:i+1].decode('utf-8').rstrip(',')
+                    self.UART_buffer = self.UART_buffer[i+1:]
+                    # print(datetime.datetime.now(), len(self.UART_buffer), line)
+                    self.serial_to_manager_carrier.emit(line)
 
             except Exception as e:
                 print(e)

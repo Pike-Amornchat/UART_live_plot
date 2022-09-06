@@ -19,10 +19,6 @@ class Data_Manager(QThread):
         self.user_connection = user_connection
         self.raw_processor_connection = Raw_Processor(data_manager=self)
         self.plotter_connection = Plotter(data_manager=self,raw_processor=self.raw_processor_connection)
-
-        
-        
-
         self.storage_connection = Storage(data_manager=self,raw_processor=self.raw_processor_connection)
         # self.application_processor_connection = Application_Processor(data_manager=self,
         #                                                               raw_processor=self.raw_processor_connection)
@@ -92,9 +88,6 @@ class Data_Manager(QThread):
         self.start_flag = 0
         self.transmitting = 0
 
-        # Start the thread - triggers run() command
-        self.start(priority = QThread.TimeCriticalPriority)
-
     def full_reset(self):
         self.storage_connection.reset()
         # self.plotter_connection.reset()
@@ -104,137 +97,127 @@ class Data_Manager(QThread):
         self.data_manager_init()
 
     def run(self):
-        # return
-        # while True:
-            # # Optimize the CPU - if nothing in then don't kill the CPU
-            #
-            # if len(self.raw_UART_input) == 0:
-            #     time.sleep(0.0001)
-            # if len(self.user_input) == 0:
-            #     time.sleep(0.0001)
+        command = ''
+        option = ''
+        choice = ''
 
-        while len(self.raw_UART_input) > 0 or len(self.user_input) > 0:
-            command = ''
-            option = ''
-            choice = ''
+        if len(self.user_input) > 0:
+            try:
+                command = self.user_input[0][0]
+                option = self.user_input[0][1]
+                if command == 'connection' and option == 'setport':
+                    choice = self.user_input[0][2]
 
-            if len(self.user_input) > 0:
+            except Exception:
+                print('Sorry, incorrect syntax. Please try again.')
+
+            if command == 'store':
+                if option == 'start':
+                    self.storage_connection.start_storing()
+                elif option == 'stop':
+                    self.storage_connection.stop()
+
+            elif command == 'connection':
+                if option == 'setport':
+                    self.serial_connection.close_port()
+                    self.serial_connection.change_port(choice)
+                    self.serial_connection.connect_port()
+                elif option == 'closeport':
+                    self.serial_connection.close_port()
+                    print('Port %s closed'%self.serial_connection.port)
+
+            elif command == 'plot':
+                options = self.user_input[0][1:]
                 try:
-                    command = self.user_input[0][0]
-                    option = self.user_input[0][1]
-                    if command == 'connection' and option == 'setport':
-                        choice = self.user_input[0][2]
-
+                    for i in range(len(options)):
+                        options[i] = Config.categories[options[i]]
+                    decoded_options = self.list_and(options)
+                    self.plot_index_list = self.combine_list(self.plot_index_list,decoded_options)
                 except Exception:
-                    print('Sorry, incorrect syntax. Please try again.')
+                    self.plot_index_list = []
+                self.plot_index_list.sort()
+                print(self.plot_index_list)
 
-                if command == 'store':
-                    if option == 'start':
-                        self.storage_connection.start_storing()
-                    elif option == 'stop':
-                        self.storage_connection.stop()
+                self.manager_to_plotter_carrier.emit(self.plot_index_list)
 
-                elif command == 'connection':
-                    if option == 'setport':
-                        self.serial_connection.close_port()
-                        self.serial_connection.change_port(choice)
-                        self.serial_connection.connect_port()
-                    elif option == 'closeport':
-                        self.serial_connection.close_port()
-                        print('Port %s closed'%self.serial_connection.port)
-
-                elif command == 'plot':
-                    options = self.user_input[0][1:]
-                    try:
-                        for i in range(len(options)):
-                            options[i] = Config.categories[options[i]]
-                        decoded_options = self.list_and(options)
-                        self.plot_index_list = self.combine_list(self.plot_index_list,decoded_options)
-                    except Exception:
-                        self.plot_index_list = []
-                    self.plot_index_list.sort()
-                    print(self.plot_index_list)
-
-                    self.manager_to_plotter_carrier.emit(self.plot_index_list)
-
-                elif command == 'remove':
-                    options = self.user_input[0][1:]
-                    try:
-                        for i in range(len(options)):
-                            options[i] = Config.categories[options[i]]
-                        decoded_options = self.list_and(options)
-                        self.plot_index_list = self.delete_from(self.plot_index_list,decoded_options)
-                    except Exception:
-                        self.plot_index_list = []
-                    self.plot_index_list.sort()
-                    print(self.plot_index_list)
-                    self.manager_to_plotter_carrier.emit(self.plot_index_list)
-
-                # Reset the user input
-
-                self.user_input = []
-
-            if len(self.raw_UART_input) > 0:
+            elif command == 'remove':
+                options = self.user_input[0][1:]
                 try:
-                    # The raw input coming in will be the first one in our stack
-                    self.raw = self.raw_UART_input[0]
-                    # print(self.raw)
-                    # We can then delete the first element, because we are done with it
-                    self.raw_UART_input = self.raw_UART_input[1:]
+                    for i in range(len(options)):
+                        options[i] = Config.categories[options[i]]
+                    decoded_options = self.list_and(options)
+                    self.plot_index_list = self.delete_from(self.plot_index_list,decoded_options)
+                except Exception:
+                    self.plot_index_list = []
+                self.plot_index_list.sort()
+                print(self.plot_index_list)
+                self.manager_to_plotter_carrier.emit(self.plot_index_list)
 
-                    self.line = np.copy(np.asarray(self.raw.split(',')))
-                    self.identifier = self.line[0][0]
+            # Reset the user input
 
-                    # Remove identifier
-                    self.line[0] = self.line[0][2:]
+            self.user_input = []
 
-                    # If incoming line is just text then print it
-                    if self.identifier == 'T':
-                        print(self.raw, " my time:", time.time())
-                        
-                    else:
+        while len(self.raw_UART_input) > 0:
+            try:
+                # The raw input coming in will be the first one in our stack
+                self.raw = self.raw_UART_input[0]
+                # print(self.raw)
+                # We can then delete the first element, because we are done with it
+                self.raw_UART_input = self.raw_UART_input[1:]
 
-                        self.line = np.asarray(self.line, dtype=float)
+                self.line = np.copy(np.asarray(self.raw.split(',')))
+                self.identifier = self.line[0][0]
 
-                        # If the system detects an S for start, will reinitialize everything again.
-                        if self.identifier == 'S':
-                            self.full_reset()
+                # Remove identifier
+                self.line[0] = self.line[0][2:]
 
-                        # If the identifier is a R - for R - sensor noise covariance matrix
-                        elif self.identifier == 'R':
-                            self.R.append(self.line)
+                # If incoming line is just text then print it
+                if self.identifier == 'T':
+                    print(self.raw, " my time:", time.time())
 
-                        # We also have a physical noise estimator for the acceleration,
-                        # where the user holds in rest position, to find Ak
-                        elif self.identifier == 'A':
-                            self.cov_acc.append(self.line)
+                else:
 
-                        # Lastly, for angular velocity:
-                        elif self.identifier == 'W':
-                            self.cov_ang.append(self.line)
+                    self.line = np.asarray(self.line, dtype=float)
 
-                        # Set a flag to tell the code to send the covariance just once and begin sending
-                        elif self.identifier == 'C':
-                            self.start_flag += 1
+                    # If the system detects an S for start, will reinitialize everything again.
+                    if self.identifier == 'S':
+                        self.full_reset()
 
-                        # Gyro data (G)
-                        elif self.identifier == 'G':
+                    # If the identifier is a R - for R - sensor noise covariance matrix
+                    elif self.identifier == 'R':
+                        self.R.append(self.line)
 
-                            # This line only does this once - on the first G symbol. It detects whether or not
-                            # the program can run.
-                            if self.start_flag == 1:
-                                if self.check_valid_calibration(self.R,self.cov_ang,self.cov_ang):
-                                    self.covariance_carrier.emit([self.R,self.cov_ang,self.cov_ang])
-                                    self.transmitting = 1
-                                else:
-                                    print('Error in covariance matrix - system needs a soft reset from microcontroller')
-                                self.start_flag = 2
-                            elif self.start_flag == 0:
+                    # We also have a physical noise estimator for the acceleration,
+                    # where the user holds in rest position, to find Ak
+                    elif self.identifier == 'A':
+                        self.cov_acc.append(self.line)
+
+                    # Lastly, for angular velocity:
+                    elif self.identifier == 'W':
+                        self.cov_ang.append(self.line)
+
+                    # Set a flag to tell the code to send the covariance just once and begin sending
+                    elif self.identifier == 'C':
+                        self.start_flag += 1
+
+                    # Gyro data (G)
+                    elif self.identifier == 'G':
+
+                        # This line only does this once - on the first G symbol. It detects whether or not
+                        # the program can run.
+                        if self.start_flag == 1:
+                            if self.check_valid_calibration(self.R,self.cov_ang,self.cov_ang):
+                                self.covariance_carrier.emit([self.R,self.cov_ang,self.cov_ang])
+                                self.transmitting = 1
+                            else:
                                 print('Error in covariance matrix - system needs a soft reset from microcontroller')
-                                self.start_flag = 2
-                            # If now ready to transmit:
+                            self.start_flag = 2
+                        elif self.start_flag == 0:
+                            print('Error in covariance matrix - system needs a soft reset from microcontroller')
+                            self.start_flag = 2
+                        # If now ready to transmit:
                             if self.transmitting == 1:
-                                self.manager_to_raw_processor_carrier.emit(self.line)
-                except Exception as e:
-                    print(e)
-                    print('Incomplete line.')
+                            self.manager_to_raw_processor_carrier.emit(self.line)
+            except Exception as e:
+                print(e)
+                print('Incomplete line.')
