@@ -38,7 +38,8 @@ class Data_Manager(QThread):
             if len(R) == len(R[0])  and len(R) == 6:
                 if len(cov_acc) == len(cov_acc[0])  and len(cov_acc) == 3:
                     if len(cov_ang) == len(cov_ang[0]) and len(cov_ang) == 3:
-                        return True
+                        if np.linalg.cond(cov_ang) < 1 / sys.float_info.epsilon or np.linalg.cond(cov_acc) < 1/ sys.float_info.epsilon:
+                            return True
         except Exception:
             return False
         return False
