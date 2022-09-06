@@ -216,7 +216,7 @@ class Data_Manager(QThread):
                             print('Error in covariance matrix - system needs a soft reset from microcontroller')
                             self.start_flag = 2
                         # If now ready to transmit:
-                            if self.transmitting == 1:
+                        if self.transmitting == 1:
                             self.manager_to_raw_processor_carrier.emit(self.line)
             except Exception as e:
                 print(e)
