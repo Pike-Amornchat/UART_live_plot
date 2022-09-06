@@ -3,99 +3,83 @@ from Modules import *
 
 class Plotter(QThread):
 
-    def __init__(self,sampleinterval=0.01, timewindow=10., data_manager=None,raw_processor=None):
+    def __init__(self, data_manager=None,raw_processor=None):
         super(Plotter, self).__init__()
         self.data_manager_connection =  data_manager
         self.raw_processor_connection = raw_processor
 
-        self.sampleinterval = sampleinterval
-        self.timewindow = timewindow
-
-        
-        self.win = pg.GraphicsWindow(title='Dynamic Plotting with PyQtGraph')
+        self.plot_window = pg.GraphicsWindow(title='Dynamic Plotting with PyQtGraph')
 
         self.plotter_init()
 
-        self.raw_processor_connection.raw_processor_to_plotter_carrier.connect(self.receive_raw)
-        self.data_manager_connection.manager_to_plotter_carrier.connect(self.who_to_plot)
+        self.raw_processor_connection.raw_processor_to_plotter_carrier.connect(self.receive_and_update)
+        self.data_manager_connection.manager_to_plotter_carrier.connect(self.plot_on_receive_data)
 
-        self.win.update()
+        self.plot_window.update()
 
         # print("Plotter ThreadId:",self.currentThreadId())
 
-    def who_to_plot(self,plot_index_list = []):
-        print("Got new plot",time.time())
-        del self.curveHandler
-        del self.pltHandler
-        self.win.clear()
+    def plot_on_receive_data(self,plot_index_list = []):
         self.plotter_init()
+
         self.plotting_index = plot_index_list
         curve_name = []
         pen = []
         for i, index in enumerate(plot_index_list):
             curve_name.append(Config.labels[str(index)])
             pen.append(Config.pen[i % len(Config.pen)])
-        self.Add_new_plot(curve_number = len(plot_index_list),timewindow=10,pen = pen, curve_name = curve_name )
+        self.Add_new_plot(curve_number = len(plot_index_list),pen = pen, curve_name = curve_name )
 
-        print("Ok to plot",time.time())
+    def receive_and_update(self,input_buffer=[]):
 
-    def receive_raw(self,input_buffer=''):
-        sent_vals = input_buffer
         counter = 0
         for i in self.plotting_index:
-            self.y[i] = sent_vals[i].buffer
-            self.x[i] = sent_vals[0].buffer
-            self.curveHandler[counter].setData(self.x[i], self.y[i])
-            
+            self.y[i] = input_buffer[i].buffer
+            self.x[i] = input_buffer[0].buffer
+            self.curve_list[counter].setData(self.x[i], self.y[i])
             counter += 1
         
-        self.win.update()
+        self.plot_window.update()
 
     def plotter_init(self):
+        try:
+            for plot in self.plot_list:
+                plot.clear()
+            del self.curve_list
+            del self.plot_list
+        except:
+            pass
 
-        self.data_buffer = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
+        self.plot_window.clear()
+        #data setup
 
         self.plotting_index = []
 
-         #data setup
-        self.plot_num = 0
-        self.pltHandler = []
-        self.curveHandler = []
+       
+        self.plot_list = []
+        self.curve_list = []
         # self.databufferHandler = []
         self.x = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
         self.y = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
 
-        self.feedInDataHandler = []
-        # Data stuff
-        self._interval = int(self.sampleinterval*1000)
-        self._bufsize = int(self.timewindow/self.sampleinterval)
-
         # self.start(priority = QThread.NormalPriority)
 
-    def Add_new_plot(self, size = (600,350), timewindow = 10, pen = [(255,0,0), (255,0,0)], curve_number = 2, curve_name = ["sin1","sin2"]):
-        self.plt = self.win.addPlot()#pg.plot(title='Dynamic Plotting with PyQtGraph')
-        self.plt.resize(*size)
-        self.plt.showGrid(x=True, y=True)
-        self.plt.setLabel('left', 'amplitude', 'V')
-        self.plt.setLabel('bottom', 'time', 's')
-        self.plt.addLegend()
-        self.pltHandler.append(self.plt)
+    def Add_new_plot(self, size = (600,350), pen = [(255,0,0), (255,0,0)], curve_number = 2, curve_name = ["sin1","sin2"]):
+        self.plot = self.plot_window.addPlot()
+        self.plot.resize(*size)
+        self.plot.showGrid(x=True, y=True)
+        self.plot.setLabel('left', 'amplitude', 'V')
+        self.plot.setLabel('bottom', 'time', 's')
+        self.plot.addLegend()
+        self.plot_list.append(self.plot)
         
         for i in range(curve_number):
-            self.Add_curve(plt = self.plt,timewindow = timewindow, pen = pen[i], Name = curve_name[i])
-        
-        self.plot_num += 1
+            self.Add_curve(plot = self.plot, pen = pen[i], Name = curve_name[i])
 
-    def Add_curve(self,plt = None, timewindow = 10, pen = (255,0,0), Name = ""):
 
-        self.curve = plt.plot(self.x[-1].buffer, self.y[-1].buffer, pen=pen, name = Name)
-        self.curveHandler.append(self.curve)
-
+    def Add_curve(self,plot = None, pen = (255,0,0), Name = ""):
+        self.curve = plot.plot(self.x[-1].buffer, self.y[-1].buffer, pen=pen, name = Name)
+        self.curve_list.append(self.curve)
 
     def run(self):
-        # return
-        while True:
-            if len(self.data_buffer[0].buffer) > 0:
-                for i in range(len(self.data_buffer)):
-                    print(str(i) + ' ',self.data_buffer[i].buffer)
-                print('\n')
+        pass
