@@ -117,6 +117,8 @@ class Data_Manager(QThread):
                     self.storage_connection.start_storing()
                 elif option == 'stop':
                     self.storage_connection.stop()
+                else:
+                    print('Sorry, incorrect syntax. Please try again.')
 
             elif command == 'connection':
                 if option == 'setport':
@@ -126,6 +128,8 @@ class Data_Manager(QThread):
                 elif option == 'closeport':
                     self.serial_connection.close_port()
                     print('Port %s closed'%self.serial_connection.port)
+                else:
+                    print('Sorry, incorrect syntax. Please try again.')
 
             elif command == 'plot':
                 options = self.user_input[0][1:]
@@ -153,6 +157,9 @@ class Data_Manager(QThread):
                 self.plot_index_list.sort()
                 print(self.plot_index_list)
                 self.manager_to_plotter_carrier.emit(self.plot_index_list)
+
+            else:
+                print('Sorry, incorrect syntax. Please try again.')
 
             # Reset the user input
 

@@ -14,6 +14,8 @@ class UART_RX(QThread):
         self.buffer_size = buffer_size
         self.UART_buffer = bytearray()
 
+        self.previous_error = ''
+
         self.now = time.time()
 
         # Initialize PySerial - specify baud rate
@@ -102,10 +104,12 @@ class UART_RX(QThread):
                 if i >= 0:
                     line = self.UART_buffer[:i+1].decode('utf-8').rstrip(',')
                     self.UART_buffer = self.UART_buffer[i+1:]
-                    # print(datetime.datetime.now(), len(self.UART_buffer), line)
                     self.serial_to_manager_carrier.emit(line)
 
             except Exception as e:
                 del self.UART_buffer
                 self.UART_buffer = bytearray()
-                print(e)
+                if e == self.previous_error:
+                    print(e)
+                else:
+                    self.previous_error = e
