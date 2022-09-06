@@ -94,6 +94,8 @@ class UART_RX(QThread):
         while self.serial_connection.is_open:
             try:
                 data = self.serial_connection.read_all()
+                if len(data) > 10000:
+                    print('WARNING: more than 10000 elements in UART buffer')
                 self.UART_buffer.extend(data)
 
                 i = self.UART_buffer.find(b'\n')
@@ -104,4 +106,6 @@ class UART_RX(QThread):
                     self.serial_to_manager_carrier.emit(line)
 
             except Exception as e:
+                del self.UART_buffer
+                self.UART_buffer = bytearray()
                 print(e)

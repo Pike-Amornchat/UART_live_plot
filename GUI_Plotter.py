@@ -32,21 +32,19 @@ class Plotter(QThread):
         self.plotting_index = plot_index_list
         curve_name = []
         pen = []
-        for index in plot_index_list:
+        for i, index in enumerate(plot_index_list):
             curve_name.append(Config.labels[str(index)])
-            pen.append(Config.pen[random.randint(0, len(Config.pen)-1)])
+            pen.append(Config.pen[i % len(Config.pen)])
         self.Add_new_plot(curve_number = len(plot_index_list),timewindow=10,pen = pen, curve_name = curve_name )
 
         print("Ok to plot",time.time())
 
     def receive_raw(self,input_buffer=''):
-        for i in range(len(self.data_buffer)):
-            self.data_buffer[i].add(input_buffer[i])
-
+        sent_vals = input_buffer
         counter = 0
         for i in self.plotting_index:
-            self.y[i] = self.data_buffer[i].buffer
-            self.x[i] = self.data_buffer[0].buffer
+            self.y[i] = sent_vals[i].buffer
+            self.x[i] = sent_vals[0].buffer
             self.curveHandler[counter].setData(self.x[i], self.y[i])
             
             counter += 1
