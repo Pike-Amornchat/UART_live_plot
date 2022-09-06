@@ -1,4 +1,9 @@
 class Config:
+
+        """
+        Config is just a central class for all of the modules where settings which are common can be tweaked or changed.
+        """
+
         # Serial port config settings
         port = 'COM9'
         baud_rate = 115200

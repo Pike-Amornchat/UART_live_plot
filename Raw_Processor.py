@@ -1,29 +1,39 @@
-import numpy as np
-
 from Modules import *
 
 
 class Raw_Processor(QThread):
 
+    """
+    This class is a thread which is triggered upon receiving data, and helps clean up all of the data given.
+    It has a built in velocity, jerk and norm(magnitude) calculator, as well as a Kalman filter + Kalman RTS smoother.
+    The smoother operates on batches of Config.plot_size + 2 ( + 2 is for 2nd order backwards polynomial derivative).
+    After finishing, it sends the data to storage, application and the plotter.
+    """
+
+    # Set up Signal to all 3 receiving classes
     raw_processor_to_application_carrier = Signal(list)
     raw_processor_to_storage_carrier = Signal(list)
     raw_processor_to_plotter_carrier = Signal(list)
 
     def __init__(self,data_manager=None):
+
+        # QT inheritance
         super(Raw_Processor, self).__init__()
 
+        # Initialize the data manager in here in order to form 2 way communication
         self.data_manager = data_manager
 
+        # Connect to the data manager Signal into predefined methods
         self.data_manager.covariance_carrier.connect(self.receive_covariance)
         self.data_manager.manager_to_raw_processor_carrier.connect(self.receive_data)
 
+        # Initialize the buffers
         self.init_raw_processor()
 
-        # print("Raw_Processor ThreadId:",self.currentThreadId())
-
+    # Initialize buffers, variables, etc.
     def init_raw_processor(self):
 
-        # Initializing variables
+        # Initializing variables for covariance matrices
         self.R = []
         self.cov_acc = []
         self.cov_ang = []
@@ -31,15 +41,15 @@ class Raw_Processor(QThread):
         self.data_buffer = []
 
         # Kalman variables - all 2D Numpy arrays (matrices)
-        self.zk = np.zeros((6,1))
-        self.x_current = np.zeros((9,1))
-        self.P_current = np.zeros((9,9))
-        self.Fk = np.zeros((9,9))
-        self.Bk = 0
-        self.uk = 0
-        self.Hk = 0
-        self.Qk = 0
-        self.Rk = 0
+        self.zk = np.zeros((6,1))  # Raw data
+        self.x_current = np.zeros((9,1))  # Kalman filtered values
+        self.P_current = np.zeros((9,9))  # Current covariance estimates
+        self.Fk = np.zeros((9,9))  # State transistion matrix
+        self.Bk = 0  # Control matrix
+        self.uk = 0  # Control input
+        self.Hk = 0  # Sensor conversion matrix
+        self.Qk = 0  # Environment noise matrix
+        self.Rk = 0  # Sensor noise matrix
 
         # Raw data buffer - list of 14 ring buffers
         self.data = [Dynamic_RingBuff(Config.plot_size + 2) for i in range(46)]
@@ -174,22 +184,25 @@ class Raw_Processor(QThread):
         return x_predict, x_current, P_predict, P_current
 
     def kalman_smoother(self,x_prior, x_now, P_prior, P_now, Fk):
+
+        # N is the batch size
         N = len(x_prior)
 
+        # Initialize arrays - these are lists of 2D numpy arrays
         x_smooth = [[] for p in range(N)]
-        x_smooth[-1] = x_now[-1]
         P_smooth = [[] for q in range(N)]
+
+        # Initialize the first smoothing value to the the most recent filtered value
+        x_smooth[-1] = x_now[-1]
         P_smooth[-1] = P_now[-1]
 
+        # Apply Kalman smoothing
         for k in range((N - 2), -1, -1):
             L = np.dot(np.dot(P_now[k], Fk.T), np.linalg.inv(P_prior[k + 1]))
             x_smooth[k] = x_now[k] + np.dot(L, x_smooth[k + 1] - x_prior[k + 1])
             P_smooth[k] = P_now[k] + np.dot(np.dot(L, P_smooth[k + 1] - P_prior[k + 1]), L.T)
 
-        # print('difference')
-        # print(np.asarray(x_smooth)-np.asarray(x_now))
-        # print('\n')
-
+        # Convert into a 2D array, instead of list of 2D arrays
         final = np.zeros((len(P_smooth[0]), N))
         for i in range(N):
             for j in range(len(final)):
@@ -197,18 +210,29 @@ class Raw_Processor(QThread):
 
         return final
 
+    # Method connected to data manager by Signal to connect
     def receive_data(self,input_buffer=''):
+
+        # Append to current buffer - data cleared during calculation
         self.data_buffer.append(input_buffer)
+
+        # Call calculate once data has been received
         self.calculate()
 
+    # Separate Signal receive for covariance
     def receive_covariance(self,input_buffer=''):
+
+        # Append what we get to the class
         self.cov_buffer.append(input_buffer)
         self.R = np.asarray(self.cov_buffer[0][0])
         self.cov_acc = np.asarray(self.cov_buffer[0][1])
         self.cov_ang = np.asarray(self.cov_buffer[0][2])
+
+        # Initialize the Kalman matrices
         self.x_current, self.P_current, self.Fk, self.Bk, self.uk, \
         self.Hk, self.Qk, self.Rk = self.init_kalman(Config.dt, self.cov_acc, self.cov_ang, self.R)
 
+    # Called after data is received
     def calculate(self):
 
         # 0 - 7 updated (time, temp, raw acc, raw ang)
@@ -314,13 +338,15 @@ class Raw_Processor(QThread):
         # Once everything is calculated and we have a steady stream going, send the latest data over:
         if len(self.data[2].buffer) >= 3:
 
+            # One of the data sets has to be string, the other has to be a live update
             send = []
             send_str = []
             for i in range(len(self.data)):
                 send.append(self.data[i].buffer[-1])
                 send_str.append(str(self.data[i].buffer[-1]))
 
+            # Plotter gets live smoothing, storage gets stringed data without smoothing,
+            # application gets data without smoothing
             self.raw_processor_to_application_carrier.emit(send)
             self.raw_processor_to_plotter_carrier.emit(self.data)
             self.raw_processor_to_storage_carrier.emit(send_str)
-            # print(time.time())

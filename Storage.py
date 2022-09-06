@@ -25,7 +25,7 @@ class Storage(QThread):
         time.sleep(0.01)
         if os.path.isfile('%s.txt' % now):
             self.running = True
-            print('file has been created')
+            print('A new text file has been created')
         return now
 
     def reset(self):
@@ -35,4 +35,4 @@ class Storage(QThread):
         if self.running:
             self.running = False
             self.f.close()
-            print('stopped storage')
+            print('Stopped storing data - text file closed.')

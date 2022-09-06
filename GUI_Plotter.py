@@ -62,7 +62,8 @@ class Plotter(QThread):
         self.x = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
         self.y = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
 
-        # self.start(priority = QThread.NormalPriority)
+    def reset(self):
+        self.plotter_init()
 
     def Add_new_plot(self, size = (600,350), pen = [(255,0,0), (255,0,0)], curve_number = 2, curve_name = ["sin1","sin2"]):
         self.plot = self.plot_window.addPlot()

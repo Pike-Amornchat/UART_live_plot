@@ -4,11 +4,17 @@ from User_Interface import *
 from Data_Manager import *
 from Raw_Processor import *
 
+
 class Application(QThread):
 
     def __init__(self):
 
+        # QT inherit all of QThread
         super(Application, self).__init__()
+
+        """
+        This is the main class, which does all of the initialisation and holds the other modules/threads.
+        """
 
         # Setup QT base functions
         os.environ["QT_DEBUG_PLUGINS"] = "0"
@@ -20,10 +26,15 @@ class Application(QThread):
         else:
             self.app = QApplication.instance()
 
-        # Initialize PySerial connection
+        # Initialize PySerial connection (thread)
         self.UART_Connection = UART_RX(port=Config.port, baud_rate=Config.baud_rate, buffer_size=Config.buffer_size)
+
+        # Initialize the user input thread (thread)
         self.UserInputThread = UserInput()
-        self.Data_Manager = Data_Manager(main_app = self,serial_connection=self.UART_Connection,user_connection=self.UserInputThread)
+
+        # Initialize the data manager object (on/off thread) - the rest is initialized inside this class
+        self.Data_Manager = Data_Manager(serial_connection=self.UART_Connection,
+                                         user_connection=self.UserInputThread)
 
         # We have created objects, but we haven't started running so this tells it to start
         self.app.processEvents()

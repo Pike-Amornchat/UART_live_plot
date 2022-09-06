@@ -3,9 +3,20 @@ from Modules import *
 
 class UART_RX(QThread):
 
+    """
+    This thread takes care of all of the UART inputs - whether by bluetooth or serial, it will go into a COM port.
+    The thread reads and decodes the data coming from the MCU into a fully readable string of length 86 (for G
+    identifiers).
+
+    It also deals with connecting to port and provides a method to change port during the execution of the program.
+    """
+
+    # Signal set up from this module to the data manager module - connection is established in data manager.
     serial_to_manager_carrier = Signal(str)
 
     def __init__(self, port='COM14', baud_rate=115200, buffer_size=10000):
+
+        # QT inherit all of QThread
         super(UART_RX, self).__init__()
 
         # Attributes for PySerial setup
@@ -14,9 +25,8 @@ class UART_RX(QThread):
         self.buffer_size = buffer_size
         self.UART_buffer = bytearray()
 
+        # To store the previous error for comparison so that it doesn't print the same thing too many times.
         self.previous_error = ''
-
-        self.now = time.time()
 
         # Initialize PySerial - specify baud rate
         self.serial_connection = serial.Serial()
@@ -27,10 +37,10 @@ class UART_RX(QThread):
         # Connect to the COM port
         self.connect_port()
 
-        # print("UART_RX ThreadId:",self.currentThreadId())
-
     def list_ports(self):
 
+        # Stack overflowed - makes all 256 possible COM port strings to try,
+        # then checks your system to see if this is compatible.
         if sys.platform.startswith('win'):
             ports = ['COM%s' % (i + 1) for i in range(256)]
         elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
@@ -41,6 +51,7 @@ class UART_RX(QThread):
         else:
             raise EnvironmentError('Unsupported platform')
 
+        # Tries every port in order to see what ports work. If it works, then append to a list and return
         result = []
         for port in ports:
             try:
@@ -52,15 +63,13 @@ class UART_RX(QThread):
                 pass
         return result
 
+    # Changes the port attribute
     def change_port(self, port):
         self.port = port
 
+    # Resets the UART buffer
     def reset(self):
         self.UART_buffer = bytearray()
-
-        # self.close_port()
-
-        # self.connect_port()
 
     # Connect port - used in initialization
     def connect_port(self):
@@ -92,23 +101,43 @@ class UART_RX(QThread):
         self.serial_connection.close()
         self.terminate()
 
+    # Run activated by start() method of QThreads
     def run(self):
+
+        # Check to see if the connection is open before trying to communicate:
         while self.serial_connection.is_open:
             try:
+                # Read all data from bytearray - clears buffer too
                 data = self.serial_connection.read_all()
+
+                # Check for overflow warning
                 if len(data) > 10000:
                     print('WARNING: more than 10000 elements in UART buffer')
+
+                # Adds to the bytearray what we just got from data (extend is like append for bytearray)
                 self.UART_buffer.extend(data)
 
+                # Search for '\n' to see the first instance of line break,
+                # once found then decode the section found, replacing all commas with spaces, then clears that part of
+                # the buffer. Once done, emits using signal to data manager.
                 i = self.UART_buffer.find(b'\n')
                 if i >= 0:
                     line = self.UART_buffer[:i+1].decode('utf-8').rstrip(',')
                     self.UART_buffer = self.UART_buffer[i+1:]
                     self.serial_to_manager_carrier.emit(line)
 
+                # If there is no error anymore, then reset the previous error so that the exception works again.
+                self.previous_error = ''
+
+            # Sometimes the microcontroller has fragments saved, or the user presses soft reset at an awkward time,
+            # giving rise to an incomplete line and hence no identifier/incomplete data.
             except Exception as e:
+
+                # Re-initialize the UART buffer
                 del self.UART_buffer
                 self.UART_buffer = bytearray()
+
+                # If printed the same error already, don't print it again.
                 if e == self.previous_error:
                     print(e)
                 else:
