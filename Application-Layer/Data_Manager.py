@@ -27,8 +27,6 @@ class Data_Manager(QThread):
     As for the user input, it uses set notation and a dictionary in order to decide what the user wants plotted/removed.
     The user may also choose to connect to a different port, or start recording data in a text file.
 
-
-
     The commands are as follows: [terminate,store,connection,plot,remove]:
 
     terminate (terminates the program completely)
