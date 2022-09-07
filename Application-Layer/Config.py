@@ -2,6 +2,7 @@ class Config:
 
         """
         Config is just a central class for all of the modules where settings which are common can be tweaked or changed.
+        Future development needs to turn this into a class.
         """
 
         # Serial port config settings
