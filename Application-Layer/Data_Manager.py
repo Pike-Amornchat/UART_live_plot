@@ -93,6 +93,7 @@ class Data_Manager(QThread):
         :param cov_ang: - 3x3 2D Numpy array - physical/environment noise angular velocity covariance matrix
         :return: Boolean - True if valid matrices, False if not.
         """
+
         try:
             if len(R) == len(R[0])  and len(R) == 6:
                 if len(cov_acc) == len(cov_acc[0])  and len(cov_acc) == 3:
