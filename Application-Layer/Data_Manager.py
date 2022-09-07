@@ -160,6 +160,7 @@ class Data_Manager(QThread):
         :return: list of int containing difference in 2 lists. If list1 is a proper subset of list2,
         then returns empty set.
         """
+
         return list(set(list1)-set(list2))
 
     def list_and(self,arr):

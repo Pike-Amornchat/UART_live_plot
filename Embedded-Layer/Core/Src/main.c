@@ -864,10 +864,14 @@ void PrintString(char * strbuf)
 
 void GetGyroData(float * tempreading,float * acceleration, float * angular_velocity, uint32_t * time,int print)
 {
+	// Check if data is ready. If yes, then read from it
+
 	ICM20648_isDataReady();
 	ICM20648_temperatureRead(tempreading);
 	ICM20648_accelDataRead(acceleration);
 	ICM20648_gyroDataRead(angular_velocity);
+
+	// Get the pointer to the internal clock
 	*time = HAL_GetTick();
 
 	// Data printed in format: time,temp,(ax,ay,az),(wx,wy,wz), ||acceleration||, ||angular velocity||
@@ -875,6 +879,7 @@ void GetGyroData(float * tempreading,float * acceleration, float * angular_veloc
 	float normvel = norm(acceleration);
 	float normangular = norm(angular_velocity);
 
+	// If the command is to print, then transmit via UART
 	if (print == 1)
 	{
 	sprintf(strbuf,"G %8lu,%7.3f,%8.3f,%8.3f,%8.3f,%7.3f,%7.3f,%7.3f,%8.3f,%7.3f\r\n",
@@ -917,6 +922,8 @@ void SampleNoise(float AccNoise[3][3], float AngNoise[3][3])
 	float x[N][numSamples];
 	float xbar[N];
 
+	// Sample noise until we have enough samples
+
 	while (samplecount < numSamples)
 	{
 		if (samplecount < numSamples)
@@ -939,6 +946,8 @@ void SampleNoise(float AccNoise[3][3], float AngNoise[3][3])
 			}
 		}
 
+		// Calculate the average values from each part
+
 		int k;
 
 		for (k = 0;k < N;k++)
@@ -951,6 +960,8 @@ void SampleNoise(float AccNoise[3][3], float AngNoise[3][3])
 			}
 			xbar[k] = sum/((float)numSamples);
 		}
+
+		// Use the unbiased covariance estimator to estimate the covariance matrix
 
 		int i;
 		int j;
@@ -986,6 +997,8 @@ void SampleNoise(float AccNoise[3][3], float AngNoise[3][3])
 
 void PrintNoise(char * strbuf,float Noise[3][3],int indicator)
 {
+	// If the user wants to print acceleration then print it in 3 lines
+
 	if (indicator == Accel_Indicator)
 	{
 		int i;
@@ -996,6 +1009,9 @@ void PrintNoise(char * strbuf,float Noise[3][3],int indicator)
 			PrintString(newstrbuf);
 		}
 	}
+
+	// If the user wants to print angualr velocity then print it in 3 lines
+
 	else if (indicator == Angular_Indicator)
 	{
 		int i;
@@ -1013,6 +1029,8 @@ void SampleCovariance(float GyroCovariance[N][N])
 	int samplecount = 0;
 	float x[N][numSamples];
 	float xbar[N];
+
+	// Sample noise until we have enough samples
 
 	while (samplecount < numSamples)
 	{
@@ -1036,6 +1054,8 @@ void SampleCovariance(float GyroCovariance[N][N])
 			}
 		}
 
+		// Calculate the average values from each part
+
 		int k;
 
 		for (k = 0;k < N;k++)
@@ -1048,6 +1068,8 @@ void SampleCovariance(float GyroCovariance[N][N])
 			}
 			xbar[k] = sum/((float)numSamples);
 		}
+
+		// Use the unbiased covariance estimator to estimate the covariance matrix
 
 		int i;
 		int j;
