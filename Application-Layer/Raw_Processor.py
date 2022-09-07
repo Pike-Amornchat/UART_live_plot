@@ -30,8 +30,12 @@ class Raw_Processor(QThread):
         # Initialize the buffers
         self.init_raw_processor()
 
-    # Initialize buffers, variables, etc.
     def init_raw_processor(self):
+
+        """
+        This method initializes buffers, variables, etc. Called to reset the system from Data Manager.
+        :return: None
+        """
 
         # Initializing variables for covariance matrices
         self.R = []
@@ -60,7 +64,7 @@ class Raw_Processor(QThread):
             self.data[i].add(0)
             self.data[i].add(0)
 
-        # Ring buffer for Kalman Smoother - list of 2D numpy arrays (list of matrices)
+        # Ring buffer for Kalman Smoother - Dynamic_RingBuff of 2D numpy arrays (list of matrices)
         self.x_prior = Dynamic_RingBuff(Config.plot_size + 2)
         self.x_now = Dynamic_RingBuff(Config.plot_size + 2)
         self.P_prior = Dynamic_RingBuff(Config.plot_size + 2)
@@ -74,9 +78,26 @@ class Raw_Processor(QThread):
         # self.start(priority = QThread.NormalPriority)
 
     def reset(self):
+
+        """
+        Called by Data Manager, just resets all buffers
+        :return: None
+        """
+
         self.init_raw_processor()
 
     def init_kalman(self, dt, cov_acc, cov_ang, Rk_estimate):
+
+        """
+        Initializes all Kalman matrices after the covariance estimates are finished. This uses the stationary model,
+        with acceleration variance and angular velocity variance. Initializes sample zero for x and P.
+        :param dt: Time period between 2 samples (approximate)
+        :param cov_acc: - 3x3 2D Numpy array - physical/environment noise acceleration covariance matrix
+        :param cov_ang: - 3x3 2D Numpy array - physical/environment noise angular velocity covariance matrix
+        :param Rk_estimate: 6x6 2D Numpy array - sensor noise covariance matrix
+        :return: x_current, P_current, Fk, Bk, uk, Hk, Qk, Rk, all 2D Numpy arrays
+        used for Kalman filtering and Smoothing
+        """
 
         # Initialize filter with x_0 = 0 - 2D array of 1xn
         x_current = np.transpose(np.asarray([[0 for i in range(9)]]))
@@ -161,6 +182,21 @@ class Raw_Processor(QThread):
 
     def kalman_filter(self,x_before, P_before, Fk, Bk, uk, Hk, Qk, Rk, zk):
 
+        """
+        Function takes in previous time step vector and covariance, with other information
+        and produces a new estimate with reduced variance.
+        :param x_before: 1x9 2D Numpy array of previous state (time k-1)
+        :param P_before: 9x9 2D Numpy array of previous error covariance matrix
+        :param Fk: 9x9 2D Numpy array - State transition matrix
+        :param Bk: 2D Numpy array - Control matrix
+        :param uk: 2D numpy array (vector) - control input
+        :param Hk: 2D Nupy array - Sensor conversion matrix
+        :param Qk: 9x9 2D Numpy array of physical noise error covariance matrix
+        :param Rk: 9x9 2D Numpy array of sensor noise error covariance matrix
+        :param zk: 1x6 2D numpy array (vector) - observation at time k (current time)
+        :return:
+        """
+
         import numpy as np
 
         # Predict:
@@ -184,6 +220,16 @@ class Raw_Processor(QThread):
         return x_predict, x_current, P_predict, P_current
 
     def kalman_smoother(self,x_prior, x_now, P_prior, P_now, Fk):
+
+        """
+        Applies Kalman smoothing to the batch given by x_k|k and x_k|k-1.
+        :param x_prior: List of 2D Numpy arrays - list contains each x_k|k-1 vector
+        :param x_now: List of 2D Numpy arrays - list contains each x_k|k vector
+        :param P_prior: List of 2D Numpy arrays - list contains each P_k|k-1 matrix
+        :param P_now: List of 2D Numpy arrays - list contains each P_k|k matrix
+        :param Fk: 9x9 2D Numpy array - State transition matrix
+        :return: 2D Numpy array 9 x len(x_prior) - 2D array of the filtered values
+        """
 
         # N is the batch size
         N = len(x_prior)
@@ -210,8 +256,13 @@ class Raw_Processor(QThread):
 
         return final
 
-    # Method connected to data manager by Signal to connect
     def receive_data(self,input_buffer=''):
+
+        """
+        Method connected to Data Manager by Signal to receive raw data - appends data into buffer and calls calculate()
+        :param input_buffer: Default buffer for information from signal, expects list of float
+        :return: None
+        """
 
         # Append to current buffer - data cleared during calculation
         self.data_buffer.append(input_buffer)
@@ -221,6 +272,13 @@ class Raw_Processor(QThread):
 
     # Separate Signal receive for covariance
     def receive_covariance(self,input_buffer=''):
+
+        """
+        Method connected to Data Manager by Signal to receive covariance data,
+        appends data into buffer and calls init_kalman() to initialize Kalman variables
+        :param input_buffer: Default buffer for information from signal, expects list of 2D arrays
+        :return: None
+        """
 
         # Append what we get to the class
         self.cov_buffer.append(input_buffer)
@@ -235,10 +293,16 @@ class Raw_Processor(QThread):
     # Called after data is received
     def calculate(self):
 
+        """
+        Called upon receiving raw data, uses it to calculate every required value using Kalman methods. Emits data to
+        Application_Processor, GUI_Plotter and Storage in the correct format (specified in Config).
+        :return: None
+        """
+
         # 0 - 7 updated (time, temp, raw acc, raw ang)
 
-        # Append time
-        self.data[0].add(self.data_buffer[0][0])
+        # Append time and divide by 1000 to get seconds
+        self.data[0].add(self.data_buffer[0][0]/1000)
 
         # Append temperature
         self.data[1].add(self.data_buffer[0][1])
@@ -310,8 +374,6 @@ class Raw_Processor(QThread):
         self.x_smoothed = self.kalman_smoother(self.x_prior.buffer,
                                                 self.x_now.buffer,
                                                 self.P_prior.buffer, self.P_now.buffer, self.Fk)
-
-
 
         # Add the smoothed x to the array for plotting (2D array 46 x N+2)
         for i in range(30, 38 + 1):

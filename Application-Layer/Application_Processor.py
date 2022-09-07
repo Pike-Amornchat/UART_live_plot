@@ -23,18 +23,34 @@ class Application_Processor(QThread):
         # Connect to Raw_Processor to receive clean data
         self.raw_processor_connection.raw_processor_to_application_carrier.connect(self.receive_raw)
 
-    # Method for receiving data - puts it into a dynamic ring buffer.
     def receive_raw(self,input_buffer=''):
+
+        """
+        Method for receiving data connected by Signal - puts received data into a dynamic ring buffer.
+        :param input_buffer: Default buffer for Signal - Expects list of float containing 1 time step of processed data
+        :return: None
+        """
+
         for i in range(len(self.data_buffer)):
             self.data_buffer[i].add(input_buffer[i])
 
     # Initializing method - used for reset
     def application_init(self):
-        self.data_buffer = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
-        # self.start()
 
-    # Reset just clears the buffers
+        """
+        Initializes data buffer - can be called to reset
+        :return: None
+        """
+
+        self.data_buffer = [Dynamic_RingBuff(Config.plot_size) for i in range(46)]
+
     def reset(self):
+
+        """
+        Reset just clears the buffers - called by Data Manager
+        :return: None
+        """
+
         self.application_init()
 
     # Empty, but can be called every time data is sent from receive_raw()

@@ -71,7 +71,7 @@ class Data_Manager(QThread):
         # The rest of them require data manager in order to do .connect() when receiving data, so self is passed in
         self.raw_processor_connection = Raw_Processor(data_manager=self)
         self.plotter_connection = Plotter(data_manager=self,raw_processor=self.raw_processor_connection)
-        self.storage_connection = Storage(data_manager=self,raw_processor=self.raw_processor_connection)
+        self.storage_connection = Storage(raw_processor=self.raw_processor_connection)
         self.application_processor_connection = Application_Processor(data_manager=self,
                                                                       raw_processor=self.raw_processor_connection)
 
@@ -106,7 +106,7 @@ class Data_Manager(QThread):
     def receive_UART(self,input_buffer=''):
 
         """
-        Signal receive method for UART MCU data
+        Signal receive method for UART MCU data - expects string
         :param input_buffer: Default buffer for Signal connect
         :return: None
         """
@@ -123,7 +123,7 @@ class Data_Manager(QThread):
     def receive_user_input(self,input_buffer=''):
 
         """
-        Signal receive method for UserInput thread
+        Signal receive method for UserInput thread - expects string
         :param input_buffer: Default buffer for Signal connect
         :return: None
         """

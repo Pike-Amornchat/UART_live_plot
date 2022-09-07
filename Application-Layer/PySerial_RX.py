@@ -38,9 +38,10 @@ class UART_RX(QThread):
         self.connect_port()
 
     def list_ports(self):
+
         """
         Method tries and lists all available ports for connecting
-        :return: list of string containing all available COM ports
+        :return: List of string containing all available COM ports
         """
 
         # Stack overflowed - makes all 256 possible COM port strings to try,
@@ -69,19 +70,23 @@ class UART_RX(QThread):
 
     # Changes the port attribute
     def change_port(self, port):
+
         """
         Allows the user to change ports with a method
         :param port: string specifying port, e.g. COM9
         :return: None
         """
+
         self.port = port
 
     # Resets the UART buffer
     def reset(self):
+
         """
         Method accessed by Data Manager for full reset - clears buffers
         :return: None
         """
+
         self.UART_buffer = bytearray()
 
     # Connect port - used in initialization
@@ -116,10 +121,12 @@ class UART_RX(QThread):
     # To emergency close the port (used for debug)
 
     def close_port(self):
+
         """
         Allows the user to close port and terminate the connection - used for debug and reset
         :return: None
         """
+
         self.serial_connection.close()
         self.terminate()
 
