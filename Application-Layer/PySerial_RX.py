@@ -38,6 +38,10 @@ class UART_RX(QThread):
         self.connect_port()
 
     def list_ports(self):
+        """
+        Method tries and lists all available ports for connecting
+        :return: list of string containing all available COM ports
+        """
 
         # Stack overflowed - makes all 256 possible COM port strings to try,
         # then checks your system to see if this is compatible.
@@ -65,14 +69,28 @@ class UART_RX(QThread):
 
     # Changes the port attribute
     def change_port(self, port):
+        """
+        Allows the user to change ports with a method
+        :param port: string specifying port, e.g. COM9
+        :return: None
+        """
         self.port = port
 
     # Resets the UART buffer
     def reset(self):
+        """
+        Method accessed by Data Manager for full reset - clears buffers
+        :return: None
+        """
         self.UART_buffer = bytearray()
 
     # Connect port - used in initialization
     def connect_port(self):
+
+        """
+        Tries to connect to the port which is recorded in the class attribute self.port. If unavailable, prints error.
+        :return: None
+        """
 
         try:
             # Setup up baud rate and port
@@ -98,11 +116,22 @@ class UART_RX(QThread):
     # To emergency close the port (used for debug)
 
     def close_port(self):
+        """
+        Allows the user to close port and terminate the connection - used for debug and reset
+        :return: None
+        """
         self.serial_connection.close()
         self.terminate()
 
     # Run activated by start() method of QThreads
     def run(self):
+
+        """
+        One of 2 fully active threads - while the serial port is open it will read data into the buffer and rephrase it
+        into the correct format using decode, then emit to Data Manager. If communication is unavailable, informs the
+        user to change ports, and shows available ports.
+        :return: None
+        """
 
         # Check to see if the connection is open before trying to communicate:
         while self.serial_connection.is_open:
