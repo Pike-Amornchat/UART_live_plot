@@ -22,14 +22,23 @@ class UserInput(QThread):
         # This thread should be lowest priority because a user input does not have to be that fast
         self.start(priority = QThread.LowestPriority)
 
-    # Resets the command buffer
     def reset(self):
+
+        """
+        Resets the command buffer when caled by Data Manager
+        :return: None
+        """
+
         self.terminate()
         self.command = ''
         self.start()
 
-    # Run called by QThread start()
     def run(self):
+
+        """
+        Run called by QThread start() and constantly receives user inputs, then emits to Data Manager
+        :return:
+        """
 
         # Infinite loop receiving command
         while True:

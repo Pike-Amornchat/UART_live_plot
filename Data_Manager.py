@@ -9,6 +9,7 @@ class Data_Manager(QThread):
     """
     This is the most important thread in the program - it takes the data in from PySerial and decides where to send it/
     acts upon the instructions - this is done through a simple identifier protocol, a letter at the start of a line.
+    Note that this thread DOES NOT RUN ALL THE TIME - due to optimization, it runs upon data reception.
 
     Also, it controls, interprets and issues commands issued by the command line from the user.
 
@@ -81,9 +82,17 @@ class Data_Manager(QThread):
         # Initialize the data manager class with default settings
         self.data_manager_init()
 
-    # Checks for valid covariance matrices using matrix shape and invertibility,
-    # will be singular if left too still during environment noise calibration.
     def check_valid_calibration(self,R, cov_acc, cov_ang):
+
+        """
+        Checks for valid covariance matrices using matrix shape and invertibility,
+        will be singular if left too still during environment noise calibration.
+        DOES NOT CHECK FOR NEGATIVE SEMIDEFINITENESS.
+        :param R: 6x6 2D Numpy array - sensor noise covariance matrix
+        :param cov_acc: - 3x3 2D Numpy array - physical/environment noise acceleration covariance matrix
+        :param cov_ang: - 3x3 2D Numpy array - physical/environment noise angular velocity covariance matrix
+        :return: Boolean - True if valid matrices, False if not.
+        """
         try:
             if len(R) == len(R[0])  and len(R) == 6:
                 if len(cov_acc) == len(cov_acc[0])  and len(cov_acc) == 3:
@@ -94,8 +103,13 @@ class Data_Manager(QThread):
             return False
         return False
 
-    # Signal receive methods
     def receive_UART(self,input_buffer=''):
+
+        """
+        Signal receive method for UART MCU data
+        :param input_buffer: Default buffer for Signal connect
+        :return: None
+        """
 
         # If receive emit from Signal, then append it into the buffer
         self.raw_UART_input.append(input_buffer)
@@ -108,6 +122,12 @@ class Data_Manager(QThread):
 
     def receive_user_input(self,input_buffer=''):
 
+        """
+        Signal receive method for UserInput thread
+        :param input_buffer: Default buffer for Signal connect
+        :return: None
+        """
+
         # If receive emit from Signal, then append it into the buffer
         self.user_input.append(input_buffer.split(' '))
 
@@ -119,23 +139,48 @@ class Data_Manager(QThread):
 
     # Set operations methods for plot and remove functions - set operations to determine user plot input
 
-    # Logical OR
     def combine_list(self,list1,list2):
+
+        """
+        Logical OR for 2 lists
+        :param list1: list of int
+        :param list2: list of int
+        :return: list of int containing the OR of the 2 lists
+        """
+
         return list(set(list1) | set(list2))
 
-    # Logical subtract
     def delete_from(self,list1,list2):
+
+        """
+        Logical subtract for 2 lists
+        :param list1: list of int - main list
+        :param list2: list of int - list to subtract
+        :return: list of int containing difference in 2 lists. If list1 is a proper subset of list2,
+        then returns empty set.
+        """
         return list(set(list1)-set(list2))
 
-    # Logical and between 2 lists
     def list_and(self,arr):
+
+        """
+        Logical AND for 2 lists
+        :param arr: list of list of int (2D list)
+        :return: list of int - the logical AND operation
+        """
+
         newlist = arr[0]
         for i in range(len(arr)):
             newlist = list(set(newlist) & arr[i])
         return newlist
 
-    # Init for data manager - variables done outside def __init__(self) for ease of reset.
     def data_manager_init(self):
+
+        """
+        Init for data manager - variables done outside def __init__(self) for ease of reset.
+        :return: None
+        """
+
         # Initialize the input buffers
         self.raw_UART_input = []
         self.user_input = []
@@ -155,8 +200,14 @@ class Data_Manager(QThread):
         self.start_flag = 0
         self.transmitting = 0
 
-    # Upon seeing an S, data manager will reset every class.
     def full_reset(self):
+
+        """
+        Upon seeing an S, data manager will reset every class using this method.
+        Calling this calls reset from every class.
+        :return: None
+        """
+
         self.storage_connection.reset()
         self.plotter_connection.reset()
         self.application_processor_connection.reset()
@@ -164,8 +215,14 @@ class Data_Manager(QThread):
         self.serial_connection.reset()
         self.data_manager_init()
 
-    # Run is called upon receiving data and only runs once.
     def run(self):
+
+        """
+        Run is called upon receiving data and only runs once, checking the identifier and issuing the commands inputted
+        by the user as well as managing the data in from UART.
+        :return: None
+        """
+
         command = ''
         option = ''
         choice = ''

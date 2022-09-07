@@ -9,12 +9,12 @@ class Application(QThread):
 
     def __init__(self):
 
-        # QT inherit all of QThread
-        super(Application, self).__init__()
-
         """
         This is the main class, which does all of the initialisation and holds the other modules/threads.
         """
+
+        # QT inherit all of QThread
+        super(Application, self).__init__()
 
         # Setup QT base functions
         os.environ["QT_DEBUG_PLUGINS"] = "0"
@@ -41,6 +41,7 @@ class Application(QThread):
         self.app.exec()
 
 
+# Call class here and run the application
 if __name__ == '__main__':
     app = Application()
     sys.exit(app)
